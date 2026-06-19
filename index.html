@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LoadLink Courier</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#" aria-label="LoadLink Courier home">
+        <span class="brand-mark">LL</span>
+        <span>
+          <strong>LoadLink</strong>
+          <small>Courier</small>
+        </span>
+      </a>
+      <nav class="desktop-nav" aria-label="Main navigation">
+        <a href="#booking">Request a bakkie</a>
+        <a href="#how-it-works">How it works</a>
+        <a href="#drivers">For drivers</a>
+        <a href="#support">Support</a>
+      </nav>
+      <a class="header-action" href="#booking">Get a quote</a>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-backdrop" aria-hidden="true"></div>
+        <div class="hero-content">
+          <p class="eyebrow">Professional bakkie and truck courier</p>
+          <h1 id="hero-title">Book the right vehicle for moving goods, furniture, and business deliveries.</h1>
+          <p class="hero-copy">
+            Customers request a load, LoadLink calculates the trip price, and nearby vetted drivers accept the job in real time.
+          </p>
+          <div class="hero-actions">
+            <a class="primary-button" href="#booking">Request a vehicle</a>
+            <a class="secondary-button" href="#drivers">Drive with us</a>
+          </div>
+          <dl class="trust-strip">
+            <div>
+              <dt>8 min</dt>
+              <dd>average dispatch target</dd>
+            </div>
+            <div>
+              <dt>24/7</dt>
+              <dd>commercial support</dd>
+            </div>
+            <div>
+              <dt>Insured</dt>
+              <dd>partner loads</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+
+      <section class="booking-band" id="booking" aria-labelledby="booking-title">
+        <div class="booking-layout">
+          <section class="booking-panel" aria-labelledby="booking-title">
+            <div class="section-kicker">Instant estimate</div>
+            <h2 id="booking-title">Request a bakkie or truck</h2>
+            <p class="section-copy">Enter the trip details and confirm once the price looks right.</p>
+
+            <form id="quoteForm" class="quote-form">
+              <div class="field-grid">
+                <label>
+                  <span>Pickup location</span>
+                  <select id="pickup" name="pickup">
+                    <option value="sandton">Sandton</option>
+                    <option value="rosebank">Rosebank</option>
+                    <option value="midrand">Midrand</option>
+                    <option value="soweto">Soweto</option>
+                    <option value="centurion">Centurion</option>
+                    <option value="pretoria">Pretoria CBD</option>
+                  </select>
+                </label>
+
+                <label>
+                  <span>Drop-off destination</span>
+                  <select id="dropoff" name="dropoff">
+                    <option value="rosebank">Rosebank</option>
+                    <option value="sandton">Sandton</option>
+                    <option value="midrand">Midrand</option>
+                    <option value="soweto">Soweto</option>
+                    <option value="centurion">Centurion</option>
+                    <option value="pretoria">Pretoria CBD</option>
+                  </select>
+                </label>
+
+                <label>
+                  <span>What are you moving?</span>
+                  <select id="loadType" name="loadType">
+                    <option value="bed">Bed or mattress</option>
+                    <option value="furniture">Household furniture</option>
+                    <option value="appliance">Appliance</option>
+                    <option value="business">Business stock</option>
+                    <option value="construction">Construction material</option>
+                  </select>
+                </label>
+
+                <label>
+                  <span>Vehicle needed</span>
+                  <select id="vehicle" name="vehicle">
+                    <option value="bakkie">Bakkie</option>
+                    <option value="canopy">Bakkie with canopy</option>
+                    <option value="smallTruck">Small truck</option>
+                    <option value="largeTruck">Large truck</option>
+                  </select>
+                </label>
+              </div>
+
+              <fieldset class="option-row">
+                <legend>Extra help</legend>
+                <label class="check-option">
+                  <input id="helpers" type="checkbox">
+                  <span>Need loading assistance</span>
+                </label>
+                <label class="check-option">
+                  <input id="stairs" type="checkbox">
+                  <span>Stairs or upper floor</span>
+                </label>
+              </fieldset>
+
+              <button class="primary-button form-button" type="button" id="calculateBtn">Calculate price</button>
+            </form>
+          </section>
+
+          <aside class="quote-card" aria-live="polite">
+            <div class="quote-topline">
+              <span>Estimated trip price</span>
+              <strong id="quotePrice">R 436</strong>
+            </div>
+
+            <div class="route-visual" aria-label="Route preview">
+              <div class="route-node">
+                <span></span>
+                <p id="pickupLabel">Sandton</p>
+              </div>
+              <div class="route-line">
+                <i></i>
+              </div>
+              <div class="route-node destination">
+                <span></span>
+                <p id="dropoffLabel">Rosebank</p>
+              </div>
+            </div>
+
+            <dl class="quote-details">
+              <div>
+                <dt>Distance</dt>
+                <dd id="distanceText">5.4 km</dd>
+              </div>
+              <div>
+                <dt>Vehicle</dt>
+                <dd id="vehicleText">Bakkie</dd>
+              </div>
+              <div>
+                <dt>Load</dt>
+                <dd id="loadText">Bed or mattress</dd>
+              </div>
+              <div>
+                <dt>ETA to pickup</dt>
+                <dd id="etaText">7 min</dd>
+              </div>
+            </dl>
+
+            <button class="confirm-button" id="confirmBtn" type="button">Confirm request</button>
+            <p class="fine-print">Demo pricing includes base fare, distance, selected vehicle, and handling requirements.</p>
+          </aside>
+        </div>
+      </section>
+
+      <section class="status-section" aria-labelledby="status-title">
+        <div class="status-copy">
+          <div class="section-kicker">Live dispatch preview</div>
+          <h2 id="status-title">Once confirmed, the nearest qualified driver gets the trip.</h2>
+          <p>
+            This first website version simulates dispatch so you can see the customer and driver flow before we connect real accounts, payments, GPS, and notifications.
+          </p>
+        </div>
+
+        <div class="dispatch-board">
+          <div class="dispatch-header">
+            <span>Driver notification</span>
+            <strong id="dispatchState">Waiting for customer confirmation</strong>
+          </div>
+          <div class="driver-card">
+            <div class="driver-avatar">TM</div>
+            <div>
+              <h3 id="driverName">Thabo M.</h3>
+              <p id="driverMeta">Bakkie driver · 4.9 rating · 2.1 km away</p>
+            </div>
+            <span class="driver-status" id="driverStatus">Standby</span>
+          </div>
+          <div class="job-summary">
+            <span>Trip value</span>
+            <strong id="driverFare">R 436</strong>
+          </div>
+          <button id="acceptBtn" class="secondary-button accept-button" type="button" disabled>Driver accepts trip</button>
+        </div>
+      </section>
+
+      <section class="process-section" id="how-it-works" aria-labelledby="process-title">
+        <div class="section-kicker">How it works</div>
+        <h2 id="process-title">A simple courier marketplace between customers and vehicle owners.</h2>
+        <div class="steps">
+          <article>
+            <span>01</span>
+            <h3>Customer requests</h3>
+            <p>The customer chooses pickup, destination, vehicle size, load type, and any handling needs.</p>
+          </article>
+          <article>
+            <span>02</span>
+            <h3>Platform prices</h3>
+            <p>The system estimates distance and calculates a transparent price before confirmation.</p>
+          </article>
+          <article>
+            <span>03</span>
+            <h3>Driver accepts</h3>
+            <p>A nearby driver receives the trip, accepts it, and proceeds to the pickup point.</p>
+          </article>
+          <article>
+            <span>04</span>
+            <h3>Trip tracked</h3>
+            <p>Both parties receive status updates from pickup to delivery completion.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="driver-section" id="drivers" aria-labelledby="drivers-title">
+        <div>
+          <div class="section-kicker">For truck and bakkie owners</div>
+          <h2 id="drivers-title">Turn available vehicle time into paid trips.</h2>
+          <p>
+            Drivers can receive courier, furniture, and business load requests based on vehicle type, availability, location, and accepted service area.
+          </p>
+        </div>
+        <ul class="driver-points">
+          <li>Verified customer requests</li>
+          <li>Clear fare before accepting</li>
+          <li>Route, load type, and handling notes upfront</li>
+          <li>Ratings and performance history</li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="site-footer" id="support">
+      <div>
+        <strong>LoadLink Courier</strong>
+        <p>Built for serious goods movement, owner-drivers, and customers who need reliable load transport.</p>
+      </div>
+      <a href="#booking">Start a request</a>
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
+</html>

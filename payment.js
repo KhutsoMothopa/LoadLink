@@ -42,7 +42,7 @@ function renderBooking(booking) {
   const paid = booking.payment?.status === "paid";
   setPaymentStatus(paid ? "Paid" : "Awaiting payment", paid ? "complete" : "warning");
   payBtn.disabled = paid;
-  payBtn.textContent = paid ? "Payment received" : "Pay and send to dispatcher";
+  payBtn.textContent = paid ? "Payment received" : "Continue to secure checkout";
 }
 
 async function loadPayment() {
@@ -61,9 +61,9 @@ async function loadPayment() {
   }
 }
 
-async function makePayment() {
+async function startCheckout() {
   payBtn.disabled = true;
-  payBtn.textContent = "Processing...";
+  payBtn.textContent = "Opening checkout...";
 
   try {
     const current = await apiRequest("/api/bookings/current");
@@ -73,18 +73,21 @@ async function makePayment() {
       return;
     }
 
-    await apiRequest(`/api/bookings/${current.booking.id}/payment`, {
+    const payload = await apiRequest("/api/payments/checkout", {
       method: "POST",
-      body: JSON.stringify({ method: selectedMethod() })
+      body: JSON.stringify({
+        bookingId: current.booking.id,
+        method: selectedMethod()
+      })
     });
 
-    window.location.href = "tracking.html";
+    window.location.href = payload.session.redirectUrl;
   } catch (error) {
-    setPaymentStatus("Payment failed", "warning");
+    setPaymentStatus("Checkout failed", "warning");
     payBtn.disabled = false;
-    payBtn.textContent = "Pay and send to dispatcher";
+    payBtn.textContent = "Continue to secure checkout";
   }
 }
 
-payBtn.addEventListener("click", makePayment);
+payBtn.addEventListener("click", startCheckout);
 loadPayment();

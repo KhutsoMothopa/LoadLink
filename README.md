@@ -9,6 +9,7 @@ Customer website for a bakkie and truck courier marketplace. LoadLink lets custo
 - Vehicle and load type selection
 - Customer confirmation flow
 - Dedicated payment method page before dispatch notification
+- Gateway-style checkout session before payment confirmation
 - Dedicated customer tracking page
 - Dispatcher notification and nearest-driver assignment simulation
 - Server-side quote calculation
@@ -50,6 +51,12 @@ Payment is available at:
 http://127.0.0.1:4173/payment.html
 ```
 
+The local gateway sandbox is available after a checkout session is created:
+
+```text
+http://127.0.0.1:4173/gateway.html?sessionId=...
+```
+
 ## Product direction
 
 The next milestone should connect the geocoding foundation to a real mapping provider. Driver tools, dispatcher tools, and payment handling should be built as separate product areas from this customer booking website.
@@ -63,6 +70,9 @@ The next milestone should connect the geocoding foundation to a real mapping pro
 - `POST /api/bookings`
 - `GET /api/bookings/current`
 - `POST /api/bookings/:id/payment`
+- `POST /api/payments/checkout`
+- `GET /api/payments/sessions/:id`
+- `POST /api/payments/sessions/:id/confirm`
 
 ## Internal foundation routes
 

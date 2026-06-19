@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LoadLink | Secure Checkout</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="index.html" aria-label="LoadLink home">
+        <span class="brand-mark">LL</span>
+        <span>
+          <strong>LoadLink</strong>
+          <small>Gateway checkout</small>
+        </span>
+      </a>
+      <nav class="desktop-nav" aria-label="Main navigation">
+        <a href="index.html#book">Book</a>
+        <a href="payment.html">Payment</a>
+        <a href="tracking.html">Tracking</a>
+      </nav>
+      <a class="header-action" href="payment.html">Back to payment</a>
+    </header>
+
+    <main class="tracking-page">
+      <section class="tracking-hero" aria-labelledby="gateway-title">
+        <p class="eyebrow">Secure gateway</p>
+        <h1 id="gateway-title">Complete your payment</h1>
+        <p id="gatewayIntro">This sandbox represents the hosted payment gateway page. A live provider will replace this screen in production.</p>
+      </section>
+
+      <section class="tracking-layout gateway-layout">
+        <section class="product-panel gateway-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="section-kicker" id="gatewayProvider">Gateway sandbox</p>
+              <h2>Payment confirmation</h2>
+            </div>
+            <span class="status-pill warning" id="gatewayStatus">Pending</span>
+          </div>
+
+          <dl class="ops-summary">
+            <div>
+              <dt>Booking ID</dt>
+              <dd id="bookingId">Loading</dd>
+            </div>
+            <div>
+              <dt>Amount</dt>
+              <dd id="paymentAmount">R 0</dd>
+            </div>
+            <div>
+              <dt>Method</dt>
+              <dd id="paymentMethod">Loading</dd>
+            </div>
+            <div>
+              <dt>Session</dt>
+              <dd id="sessionId">Loading</dd>
+            </div>
+          </dl>
+
+          <button class="primary-button payment-submit" type="button" id="completePaymentBtn">Complete payment</button>
+          <p class="fine-print">For MVP testing, this confirms payment through LoadLink's sandbox gateway endpoint.</p>
+        </section>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div>
+        <strong>LoadLink</strong>
+        <p>Hosted checkout confirms payment before dispatcher notification.</p>
+      </div>
+      <a href="payment.html">Cancel checkout</a>
+    </footer>
+
+    <script src="gateway.js"></script>
+  </body>
+</html>

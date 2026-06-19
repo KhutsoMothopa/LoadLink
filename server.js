@@ -6,6 +6,8 @@ const root = __dirname;
 const port = Number(process.env.PORT || 4173);
 const dataDir = path.join(root, "data");
 const bookingsFile = path.join(dataDir, "bookings.json");
+const paymentSessionsFile = path.join(dataDir, "payment-sessions.json");
+const gatewayName = process.env.PAYMENT_GATEWAY || "LoadLink Gateway Sandbox";
 
 const locations = {
   sandton: { label: "Sandton", address: "Sandton City, 83 Rivonia Road, Sandton", lat: -26.1076, lng: 28.0567 },
@@ -64,6 +66,10 @@ function ensureStore() {
   if (!fs.existsSync(bookingsFile)) {
     fs.writeFileSync(bookingsFile, "[]\n");
   }
+
+  if (!fs.existsSync(paymentSessionsFile)) {
+    fs.writeFileSync(paymentSessionsFile, "[]\n");
+  }
 }
 
 function readBookings() {
@@ -78,6 +84,20 @@ function readBookings() {
 function writeBookings(bookings) {
   ensureStore();
   fs.writeFileSync(bookingsFile, `${JSON.stringify(bookings, null, 2)}\n`);
+}
+
+function readPaymentSessions() {
+  ensureStore();
+  try {
+    return JSON.parse(fs.readFileSync(paymentSessionsFile, "utf8"));
+  } catch (error) {
+    return [];
+  }
+}
+
+function writePaymentSessions(sessions) {
+  ensureStore();
+  fs.writeFileSync(paymentSessionsFile, `${JSON.stringify(sessions, null, 2)}\n`);
 }
 
 function sendJson(response, statusCode, payload) {
@@ -379,7 +399,7 @@ function markBookingPaid(id, input) {
   booking.payment = {
     status: "paid",
     method: input.method || "card",
-    reference: `PAY-${Date.now().toString().slice(-7)}`,
+    reference: input.reference || `PAY-${Date.now().toString().slice(-7)}`,
     paidAt: now
   };
   booking.dispatcher = {
@@ -395,6 +415,76 @@ function markBookingPaid(id, input) {
   writeBookings(bookings);
 
   return booking;
+}
+
+function createCheckoutSession(input) {
+  const bookingId = String(input.bookingId || "").trim();
+  const method = String(input.method || "card").trim();
+  const sessionId = `CHK-${Date.now().toString().slice(-8)}`;
+  const bookings = readBookings();
+  const booking = bookings.find((item) => item.id === bookingId);
+
+  if (!booking) {
+    throw new Error("Booking not found");
+  }
+
+  if (booking.payment?.status === "paid") {
+    throw new Error("Booking is already paid");
+  }
+
+  const session = {
+    id: sessionId,
+    bookingId: booking.id,
+    provider: gatewayName,
+    method,
+    amount: booking.price,
+    currency: "ZAR",
+    status: "pending",
+    createdAt: new Date().toISOString(),
+    redirectUrl: `/gateway.html?sessionId=${sessionId}`
+  };
+
+  const sessions = readPaymentSessions();
+  sessions.push(session);
+  writePaymentSessions(sessions);
+
+  return session;
+}
+
+function getCheckoutSession(id) {
+  const session = readPaymentSessions().find((item) => item.id === id);
+  if (!session) return null;
+
+  const booking = readBookings().find((item) => item.id === session.bookingId);
+
+  return {
+    ...session,
+    booking: booking || null
+  };
+}
+
+function confirmCheckoutSession(id) {
+  const sessions = readPaymentSessions();
+  const session = sessions.find((item) => item.id === id);
+
+  if (!session) return null;
+
+  if (session.status !== "paid") {
+    session.status = "paid";
+    session.paidAt = new Date().toISOString();
+    session.reference = `GW-${Date.now().toString().slice(-7)}`;
+    writePaymentSessions(sessions);
+  }
+
+  const booking = markBookingPaid(session.bookingId, {
+    method: session.method,
+    reference: session.reference
+  });
+
+  return {
+    ...session,
+    booking
+  };
 }
 
 async function handleApi(request, response, pathname) {
@@ -452,6 +542,39 @@ async function handleApi(request, response, pathname) {
       return;
     }
 
+    if (request.method === "POST" && pathname === "/api/payments/checkout") {
+      const body = await readJsonBody(request);
+      const session = createCheckoutSession(body);
+      sendJson(response, 201, { session });
+      return;
+    }
+
+    const checkoutMatch = pathname.match(/^\/api\/payments\/sessions\/([^/]+)$/);
+    if (request.method === "GET" && checkoutMatch) {
+      const session = getCheckoutSession(checkoutMatch[1]);
+
+      if (!session) {
+        sendJson(response, 404, { error: "Payment session not found" });
+        return;
+      }
+
+      sendJson(response, 200, { session });
+      return;
+    }
+
+    const checkoutConfirmMatch = pathname.match(/^\/api\/payments\/sessions\/([^/]+)\/confirm$/);
+    if (request.method === "POST" && checkoutConfirmMatch) {
+      const session = confirmCheckoutSession(checkoutConfirmMatch[1]);
+
+      if (!session) {
+        sendJson(response, 404, { error: "Payment session not found" });
+        return;
+      }
+
+      sendJson(response, 200, { session });
+      return;
+    }
+
     const statusMatch = pathname.match(/^\/api\/bookings\/([^/]+)\/status$/);
     if (request.method === "PATCH" && statusMatch) {
       const body = await readJsonBody(request);
@@ -488,6 +611,13 @@ async function handleApi(request, response, pathname) {
 
 function serveStatic(request, response, pathname) {
   const requestedPath = pathname === "/" ? "/index.html" : decodeURIComponent(pathname);
+
+  if (requestedPath.startsWith("/data/")) {
+    response.writeHead(404);
+    response.end("Not found");
+    return;
+  }
+
   const filePath = path.join(root, requestedPath);
 
   if (!filePath.startsWith(root)) {

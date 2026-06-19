@@ -640,6 +640,87 @@ a:focus-visible {
   padding: 0 clamp(16px, 5vw, 72px) 72px;
 }
 
+.driver-dashboard {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.switch-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.switch-row input {
+  width: 20px;
+  height: 20px;
+  min-height: auto;
+  margin-top: 3px;
+  accent-color: var(--accent-dark);
+}
+
+.switch-row strong,
+.switch-row small {
+  display: block;
+}
+
+.switch-row small {
+  margin-top: 5px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.driver-location-field {
+  display: block;
+  margin-top: 18px;
+}
+
+.driver-save-button {
+  width: 100%;
+  margin-top: 18px;
+}
+
+.compact-select {
+  width: auto;
+  min-width: 148px;
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.metric-tile {
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.metric-tile span,
+.metric-tile strong {
+  display: block;
+}
+
+.metric-tile span {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.metric-tile strong {
+  margin-top: 12px;
+  color: #17202b;
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  line-height: 1;
+}
+
 .driver-job-list {
   display: grid;
   gap: 18px;
@@ -799,6 +880,7 @@ a:focus-visible {
   .console-grid,
   .customer-grid,
   .tracking-layout,
+  .driver-dashboard,
   .roadmap-section {
     grid-template-columns: 1fr;
   }

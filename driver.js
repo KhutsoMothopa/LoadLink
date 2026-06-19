@@ -1,5 +1,14 @@
 const driverJobList = document.querySelector("#driverJobList");
 const refreshJobsBtn = document.querySelector("#refreshJobsBtn");
+const availableToggle = document.querySelector("#availableToggle");
+const locationSelect = document.querySelector("#locationSelect");
+const saveAvailabilityBtn = document.querySelector("#saveAvailabilityBtn");
+const availabilityStatus = document.querySelector("#availabilityStatus");
+const locationMeta = document.querySelector("#locationMeta");
+const earningsPeriod = document.querySelector("#earningsPeriod");
+const completedJobs = document.querySelector("#completedJobs");
+const totalEarned = document.querySelector("#totalEarned");
+const earningsStatus = document.querySelector("#earningsStatus");
 
 const statusLabels = {
   driver_assigned: "Awaiting your response",
@@ -27,6 +36,24 @@ function setQueueStatus(label, className) {
   const pill = document.querySelector("#driverQueueStatus");
   pill.textContent = label;
   pill.className = `status-pill ${className}`;
+}
+
+function setAvailabilityStatus(label, className) {
+  availabilityStatus.textContent = label;
+  availabilityStatus.className = `status-pill ${className}`;
+}
+
+function renderLocations(locations, selectedKey) {
+  locationSelect.innerHTML = Object.entries(locations)
+    .map(([key, location]) => `<option value="${key}" ${key === selectedKey ? "selected" : ""}>${location.label}</option>`)
+    .join("");
+}
+
+function renderProfile(profile, locations) {
+  availableToggle.checked = Boolean(profile.available);
+  renderLocations(locations, profile.currentLocationKey);
+  setAvailabilityStatus(profile.available ? "Available" : "Unavailable", profile.available ? "active" : "warning");
+  locationMeta.textContent = `Current area: ${profile.currentLocationLabel}. Updated ${new Date(profile.updatedAt).toLocaleString("en-ZA")}.`;
 }
 
 function actionButtons(job) {
@@ -86,6 +113,10 @@ function jobCard(job) {
           <dt>Distance to pickup</dt>
           <dd>${driver.distanceToPickup || "-"} km</dd>
         </div>
+        <div>
+          <dt>Your current area</dt>
+          <dd>${driver.currentLocationLabel || "Not shared"}</dd>
+        </div>
       </dl>
 
       <div class="button-stack driver-actions">
@@ -117,6 +148,57 @@ async function loadJobs() {
   }
 }
 
+async function loadProfile() {
+  setAvailabilityStatus("Loading", "neutral");
+
+  try {
+    const payload = await apiRequest("/api/driver/profile");
+    renderProfile(payload.profile, payload.locations);
+  } catch (error) {
+    setAvailabilityStatus("Offline", "warning");
+    locationMeta.textContent = "Driver profile could not be loaded.";
+  }
+}
+
+async function saveProfile() {
+  setAvailabilityStatus("Saving", "warning");
+  saveAvailabilityBtn.disabled = true;
+
+  try {
+    const payload = await apiRequest("/api/driver/profile", {
+      method: "PATCH",
+      body: JSON.stringify({
+        available: availableToggle.checked,
+        currentLocationKey: locationSelect.value
+      })
+    });
+
+    renderProfile(payload.profile, Object.fromEntries([...locationSelect.options].map((option) => [
+      option.value,
+      { label: option.textContent }
+    ])));
+    await loadJobs();
+  } catch (error) {
+    setAvailabilityStatus("Save failed", "warning");
+    locationMeta.textContent = error.message;
+  } finally {
+    saveAvailabilityBtn.disabled = false;
+  }
+}
+
+async function loadEarnings() {
+  earningsStatus.textContent = "Loading earnings...";
+
+  try {
+    const payload = await apiRequest(`/api/driver/earnings?period=${earningsPeriod.value}`);
+    completedJobs.textContent = payload.earnings.completedJobs.toLocaleString("en-ZA");
+    totalEarned.textContent = formatRand(payload.earnings.totalEarned);
+    earningsStatus.textContent = `Showing delivered jobs from ${new Date(payload.earnings.periodStart).toLocaleDateString("en-ZA")}.`;
+  } catch (error) {
+    earningsStatus.textContent = "Earnings could not be loaded.";
+  }
+}
+
 async function respondToJob(jobId, action) {
   setQueueStatus("Updating", "warning");
 
@@ -126,9 +208,14 @@ async function respondToJob(jobId, action) {
       body: JSON.stringify({ action })
     });
     await loadJobs();
+    await loadEarnings();
   } catch (error) {
     setQueueStatus("Update failed", "warning");
   }
+}
+
+async function refreshDashboard() {
+  await Promise.all([loadProfile(), loadJobs(), loadEarnings()]);
 }
 
 driverJobList.addEventListener("click", (event) => {
@@ -138,6 +225,9 @@ driverJobList.addEventListener("click", (event) => {
   respondToJob(button.dataset.job, button.dataset.action);
 });
 
-refreshJobsBtn.addEventListener("click", loadJobs);
-loadJobs();
+refreshJobsBtn.addEventListener("click", refreshDashboard);
+saveAvailabilityBtn.addEventListener("click", saveProfile);
+earningsPeriod.addEventListener("change", loadEarnings);
+
+refreshDashboard();
 window.setInterval(loadJobs, 5000);

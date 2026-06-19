@@ -7,7 +7,9 @@ const port = Number(process.env.PORT || 4173);
 const dataDir = path.join(root, "data");
 const bookingsFile = path.join(dataDir, "bookings.json");
 const paymentSessionsFile = path.join(dataDir, "payment-sessions.json");
+const driversFile = path.join(dataDir, "drivers.json");
 const gatewayName = process.env.PAYMENT_GATEWAY || "LoadLink Gateway Sandbox";
+const activeDriverId = process.env.LOADLINK_DRIVER_ID || "DRV-101";
 
 const locations = {
   sandton: { label: "Sandton", address: "Sandton City, 83 Rivonia Road, Sandton", lat: -26.1076, lng: 28.0567 },
@@ -53,10 +55,10 @@ const allowedStatuses = [
 ];
 
 const driverPool = [
-  { id: "DRV-101", name: "Thabo M.", vehicleTypes: ["bakkie", "canopy"], lat: -26.116, lng: 28.058, rating: 4.9 },
-  { id: "DRV-102", name: "Lerato K.", vehicleTypes: ["bakkie", "smallTruck"], lat: -26.151, lng: 28.041, rating: 4.8 },
-  { id: "DRV-103", name: "Mandla S.", vehicleTypes: ["smallTruck", "largeTruck"], lat: -25.999, lng: 28.126, rating: 4.7 },
-  { id: "DRV-104", name: "Nomsa P.", vehicleTypes: ["canopy", "largeTruck"], lat: -25.861, lng: 28.188, rating: 4.9 }
+  { id: "DRV-101", name: "Thabo M.", vehicleTypes: ["bakkie", "canopy"], defaultLocationKey: "sandton", rating: 4.9 },
+  { id: "DRV-102", name: "Lerato K.", vehicleTypes: ["bakkie", "smallTruck"], defaultLocationKey: "rosebank", rating: 4.8 },
+  { id: "DRV-103", name: "Mandla S.", vehicleTypes: ["smallTruck", "largeTruck"], defaultLocationKey: "midrand", rating: 4.7 },
+  { id: "DRV-104", name: "Nomsa P.", vehicleTypes: ["canopy", "largeTruck"], defaultLocationKey: "centurion", rating: 4.9 }
 ];
 
 const contentTypes = {
@@ -77,6 +79,10 @@ function ensureStore() {
 
   if (!fs.existsSync(paymentSessionsFile)) {
     fs.writeFileSync(paymentSessionsFile, "[]\n");
+  }
+
+  if (!fs.existsSync(driversFile)) {
+    fs.writeFileSync(driversFile, `${JSON.stringify(defaultDrivers(), null, 2)}\n`);
   }
 }
 
@@ -106,6 +112,39 @@ function readPaymentSessions() {
 function writePaymentSessions(sessions) {
   ensureStore();
   fs.writeFileSync(paymentSessionsFile, `${JSON.stringify(sessions, null, 2)}\n`);
+}
+
+function defaultDrivers() {
+  const now = new Date().toISOString();
+
+  return driverPool.map((driver) => {
+    const location = locations[driver.defaultLocationKey] || locations.sandton;
+
+    return {
+      ...driver,
+      available: true,
+      currentLocationKey: driver.defaultLocationKey,
+      currentLocationLabel: location.label,
+      lat: location.lat,
+      lng: location.lng,
+      updatedAt: now
+    };
+  });
+}
+
+function readDrivers() {
+  ensureStore();
+  try {
+    const drivers = JSON.parse(fs.readFileSync(driversFile, "utf8"));
+    return Array.isArray(drivers) && drivers.length ? drivers : defaultDrivers();
+  } catch (error) {
+    return defaultDrivers();
+  }
+}
+
+function writeDrivers(drivers) {
+  ensureStore();
+  fs.writeFileSync(driversFile, `${JSON.stringify(drivers, null, 2)}\n`);
 }
 
 function sendJson(response, statusCode, payload) {
@@ -263,9 +302,17 @@ function calculateQuote(input) {
 }
 
 function nearestDriverFor(booking) {
-  const availableDrivers = driverPool.filter((driver) => driver.vehicleTypes.includes(booking.vehicleKey));
-  const ranked = availableDrivers.length ? availableDrivers : driverPool;
-  const nearest = ranked
+  const availableDrivers = readDrivers().filter((driver) =>
+    driver.available &&
+    driver.vehicleTypes.includes(booking.vehicleKey) &&
+    !booking.declinedDriverIds?.includes(driver.id)
+  );
+
+  if (!availableDrivers.length) {
+    return null;
+  }
+
+  const nearest = availableDrivers
     .map((driver) => ({
       ...driver,
       distanceToPickup: distanceKm({ lat: driver.lat, lng: driver.lng }, booking.pickup)
@@ -277,7 +324,82 @@ function nearestDriverFor(booking) {
     name: nearest.name,
     vehicle: booking.vehicle.label,
     rating: nearest.rating,
+    currentLocationLabel: nearest.currentLocationLabel,
     distanceToPickup: Number(nearest.distanceToPickup.toFixed(1))
+  };
+}
+
+function getDriverProfile(driverId = activeDriverId) {
+  const driver = readDrivers().find((item) => item.id === driverId);
+  return driver || defaultDrivers().find((item) => item.id === driverId) || null;
+}
+
+function updateDriverProfile(driverId, input) {
+  const drivers = readDrivers();
+  const driver = drivers.find((item) => item.id === driverId);
+
+  if (!driver) {
+    return null;
+  }
+
+  const locationKey = input.currentLocationKey || input.locationKey || driver.currentLocationKey;
+  const location = locations[locationKey];
+
+  if (!location) {
+    throw new Error("Invalid driver location");
+  }
+
+  driver.available = Boolean(input.available);
+  driver.currentLocationKey = locationKey;
+  driver.currentLocationLabel = location.label;
+  driver.lat = location.lat;
+  driver.lng = location.lng;
+  driver.updatedAt = new Date().toISOString();
+
+  writeDrivers(drivers);
+  return driver;
+}
+
+function getDeliveredAt(booking) {
+  const deliveredStatus = (booking.statusHistory || []).findLast?.((item) => item.status === "delivered");
+  return deliveredStatus?.at || booking.updatedAt || booking.createdAt;
+}
+
+function getPeriodStart(period) {
+  const now = new Date();
+
+  if (period === "month") {
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  }
+
+  if (period === "year") {
+    return new Date(now.getFullYear(), 0, 1);
+  }
+
+  const day = now.getDay();
+  const daysSinceMonday = day === 0 ? 6 : day - 1;
+  const start = new Date(now);
+  start.setDate(now.getDate() - daysSinceMonday);
+  start.setHours(0, 0, 0, 0);
+  return start;
+}
+
+function driverEarnings(driverId = activeDriverId, period = "week") {
+  const allowedPeriods = ["week", "month", "year"];
+  const selectedPeriod = allowedPeriods.includes(period) ? period : "week";
+  const start = getPeriodStart(selectedPeriod);
+  const completed = readBookings().filter((booking) => {
+    if (booking.status !== "delivered") return false;
+    if (booking.assignedDriver?.id !== driverId) return false;
+    return new Date(getDeliveredAt(booking)) >= start;
+  });
+
+  return {
+    period: selectedPeriod,
+    completedJobs: completed.length,
+    totalEarned: completed.reduce((sum, booking) => sum + Number(booking.driverPayout || 0), 0),
+    currency: "ZAR",
+    periodStart: start.toISOString()
   };
 }
 
@@ -341,7 +463,10 @@ function advanceBookingForCustomer(booking) {
 
   if (ageSeconds >= 6 && booking.status === "dispatcher_notified") {
     booking.assignedDriver = booking.assignedDriver || nearestDriverFor(booking);
-    pushStatus(booking, "driver_assigned");
+
+    if (booking.assignedDriver) {
+      pushStatus(booking, "driver_assigned");
+    }
   }
 
   return booking;
@@ -379,25 +504,40 @@ function updateBookingStatus(id, status) {
 
   if (status === "driver_assigned") {
     booking.assignedDriver = booking.assignedDriver || nearestDriverFor(booking);
+
+    if (!booking.assignedDriver) {
+      throw new Error("No available driver for this vehicle type");
+    }
   }
 
   writeBookings(bookings);
   return booking;
 }
 
-function listDriverJobs() {
-  return readBookings()
+function listDriverJobs(driverId = activeDriverId) {
+  const bookings = readBookings();
+  const jobs = bookings
     .map((booking) => advanceBookingForCustomer(booking))
-    .filter((booking) => ["driver_assigned", "driver_en_route", "goods_collected"].includes(booking.status));
+    .filter((booking) =>
+      ["driver_assigned", "driver_en_route", "goods_collected"].includes(booking.status) &&
+      booking.assignedDriver?.id === driverId
+    );
+
+  writeBookings(bookings);
+  return jobs;
 }
 
-function respondToDriverJob(id, action) {
+function respondToDriverJob(id, action, driverId = activeDriverId) {
   const bookings = readBookings();
   const booking = bookings.find((item) => item.id === id);
 
   if (!booking) return null;
 
   advanceBookingForCustomer(booking);
+
+  if (booking.assignedDriver?.id && booking.assignedDriver.id !== driverId) {
+    throw new Error("This job is assigned to another driver");
+  }
 
   if (action === "accept") {
     if (booking.status !== "driver_assigned") {
@@ -420,6 +560,7 @@ function respondToDriverJob(id, action) {
       at: new Date().toISOString(),
       driverId: booking.assignedDriver?.id || null
     };
+    booking.declinedDriverIds = Array.from(new Set([...(booking.declinedDriverIds || []), booking.assignedDriver?.id].filter(Boolean)));
     booking.assignedDriver = null;
     pushStatus(booking, "dispatcher_notified", "driver");
   } else if (action === "collected") {
@@ -542,6 +683,8 @@ function confirmCheckoutSession(id) {
 
 async function handleApi(request, response, pathname) {
   try {
+    const apiUrl = new URL(request.url, `http://${request.headers.host}`);
+
     if (request.method === "GET" && pathname === "/api/health") {
       sendJson(response, 200, { ok: true, service: "LoadLink API" });
       return;
@@ -579,8 +722,33 @@ async function handleApi(request, response, pathname) {
       return;
     }
 
+    if (request.method === "GET" && pathname === "/api/driver/profile") {
+      const profile = getDriverProfile();
+      sendJson(response, 200, { profile, locations });
+      return;
+    }
+
+    if (request.method === "PATCH" && pathname === "/api/driver/profile") {
+      const body = await readJsonBody(request);
+      const profile = updateDriverProfile(activeDriverId, body);
+
+      if (!profile) {
+        sendJson(response, 404, { error: "Driver not found" });
+        return;
+      }
+
+      sendJson(response, 200, { profile });
+      return;
+    }
+
+    if (request.method === "GET" && pathname === "/api/driver/earnings") {
+      const earnings = driverEarnings(activeDriverId, apiUrl.searchParams.get("period") || "week");
+      sendJson(response, 200, { earnings });
+      return;
+    }
+
     if (request.method === "GET" && pathname === "/api/driver/jobs") {
-      const jobs = listDriverJobs();
+      const jobs = listDriverJobs(activeDriverId);
       sendJson(response, 200, { jobs });
       return;
     }
@@ -631,7 +799,7 @@ async function handleApi(request, response, pathname) {
     const driverResponseMatch = pathname.match(/^\/api\/driver\/jobs\/([^/]+)\/respond$/);
     if (request.method === "POST" && driverResponseMatch) {
       const body = await readJsonBody(request);
-      const booking = respondToDriverJob(driverResponseMatch[1], body.action);
+      const booking = respondToDriverJob(driverResponseMatch[1], body.action, activeDriverId);
 
       if (!booking) {
         sendJson(response, 404, { error: "Job not found" });

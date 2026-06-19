@@ -12,6 +12,8 @@ Customer website for a bakkie and truck courier marketplace. LoadLink lets custo
 - Gateway-style checkout session before payment confirmation
 - Dedicated customer tracking page
 - Separate driver website for assigned job responses
+- Driver availability and current-area updates for dispatch assignment
+- Driver earnings summary for week, month, and year
 - Dispatcher notification and nearest-driver assignment simulation
 - Server-side quote calculation
 - Address geocoding foundation with service-area fallback
@@ -80,6 +82,9 @@ The next milestone should connect the geocoding foundation to a real mapping pro
 - `POST /api/payments/checkout`
 - `GET /api/payments/sessions/:id`
 - `POST /api/payments/sessions/:id/confirm`
+- `GET /api/driver/profile`
+- `PATCH /api/driver/profile`
+- `GET /api/driver/earnings?period=week|month|year`
 
 ## Internal foundation routes
 

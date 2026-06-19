@@ -17,6 +17,8 @@
       </a>
       <nav class="desktop-nav" aria-label="Driver navigation">
         <a href="driver.html">Jobs</a>
+        <a href="#availability">Availability</a>
+        <a href="#earnings">Earnings</a>
       </nav>
       <button class="header-action" type="button" id="refreshJobsBtn">Refresh jobs</button>
     </header>
@@ -24,11 +26,65 @@
     <main class="tracking-page">
       <section class="tracking-hero" aria-labelledby="driver-title">
         <p class="eyebrow">Driver website</p>
-        <h1 id="driver-title">Respond to assigned LoadLink jobs</h1>
-        <p id="driverIntro">Jobs appear here after payment is confirmed and dispatch assigns the nearest suitable driver.</p>
+        <h1 id="driver-title">Manage availability and assigned jobs</h1>
+        <p id="driverIntro">Show dispatch where you are working from, stay available for suitable loads, and respond when jobs are assigned.</p>
       </section>
 
       <section class="driver-workspace">
+        <div class="driver-dashboard">
+          <section class="product-panel" id="availability">
+            <div class="panel-heading">
+              <div>
+                <p class="section-kicker">Driver status</p>
+                <h2>Availability</h2>
+              </div>
+              <span class="status-pill neutral" id="availabilityStatus">Loading</span>
+            </div>
+
+            <label class="switch-row">
+              <input type="checkbox" id="availableToggle">
+              <span>
+                <strong>Available for jobs</strong>
+                <small>Dispatch can assign paid requests while this is on.</small>
+              </span>
+            </label>
+
+            <label class="driver-location-field">
+              <span>Current working area</span>
+              <select id="locationSelect"></select>
+            </label>
+
+            <button class="primary-button driver-save-button" type="button" id="saveAvailabilityBtn">Update availability</button>
+            <p class="fine-print" id="locationMeta">Loading driver profile...</p>
+          </section>
+
+          <section class="product-panel" id="earnings">
+            <div class="panel-heading">
+              <div>
+                <p class="section-kicker">Performance</p>
+                <h2>Earnings</h2>
+              </div>
+              <select class="compact-select" id="earningsPeriod" aria-label="Earnings period">
+                <option value="week">This week</option>
+                <option value="month">This month</option>
+                <option value="year">This year</option>
+              </select>
+            </div>
+
+            <div class="metric-grid">
+              <article class="metric-tile">
+                <span>Completed jobs</span>
+                <strong id="completedJobs">0</strong>
+              </article>
+              <article class="metric-tile">
+                <span>Total earned</span>
+                <strong id="totalEarned">R 0</strong>
+              </article>
+            </div>
+            <p class="fine-print" id="earningsStatus">Earnings are calculated from delivered jobs assigned to this driver.</p>
+          </section>
+        </div>
+
         <section class="product-panel">
           <div class="panel-heading">
             <div>
@@ -48,9 +104,9 @@
     <footer class="site-footer">
       <div>
         <strong>LoadLink Driver</strong>
-        <p>Separate driver website for accepting assigned courier jobs and updating trip progress.</p>
+        <p>Separate driver website for availability, earnings, assigned jobs, and delivery progress.</p>
       </div>
-      <a href="driver.html">Refresh jobs</a>
+      <a href="#availability">Update status</a>
     </footer>
 
     <script src="driver.js"></script>

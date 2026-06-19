@@ -11,6 +11,7 @@ Customer website for a bakkie and truck courier marketplace. LoadLink lets custo
 - Dedicated payment method page before dispatch notification
 - Gateway-style checkout session before payment confirmation
 - Dedicated customer tracking page
+- Separate driver website for assigned job responses
 - Dispatcher notification and nearest-driver assignment simulation
 - Server-side quote calculation
 - Address geocoding foundation with service-area fallback
@@ -57,6 +58,12 @@ The local gateway sandbox is available after a checkout session is created:
 http://127.0.0.1:4173/gateway.html?sessionId=...
 ```
 
+Driver jobs are available at:
+
+```text
+http://127.0.0.1:4173/driver.html
+```
+
 ## Product direction
 
 The next milestone should connect the geocoding foundation to a real mapping provider. Driver tools, dispatcher tools, and payment handling should be built as separate product areas from this customer booking website.
@@ -80,3 +87,4 @@ These are backend foundations for future dispatcher and driver products, not vis
 
 - `PATCH /api/bookings/:id/status`
 - `GET /api/driver/jobs`
+- `POST /api/driver/jobs/:id/respond`

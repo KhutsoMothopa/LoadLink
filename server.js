@@ -42,7 +42,15 @@ const loadFees = {
   construction: { label: "Construction material", fee: 140 }
 };
 
-const allowedStatuses = ["awaiting_payment", "dispatcher_notified", "driver_assigned", "driver_en_route", "goods_collected", "delivered"];
+const allowedStatuses = [
+  "awaiting_payment",
+  "dispatcher_notified",
+  "driver_assigned",
+  "driver_declined",
+  "driver_en_route",
+  "goods_collected",
+  "delivered"
+];
 
 const driverPool = [
   { id: "DRV-101", name: "Thabo M.", vehicleTypes: ["bakkie", "canopy"], lat: -26.116, lng: 28.058, rating: 4.9 },
@@ -336,18 +344,6 @@ function advanceBookingForCustomer(booking) {
     pushStatus(booking, "driver_assigned");
   }
 
-  if (ageSeconds >= 12 && booking.status === "driver_assigned") {
-    pushStatus(booking, "driver_en_route");
-  }
-
-  if (ageSeconds >= 20 && booking.status === "driver_en_route") {
-    pushStatus(booking, "goods_collected");
-  }
-
-  if (ageSeconds >= 30 && booking.status === "goods_collected") {
-    pushStatus(booking, "delivered");
-  }
-
   return booking;
 }
 
@@ -383,6 +379,63 @@ function updateBookingStatus(id, status) {
 
   if (status === "driver_assigned") {
     booking.assignedDriver = booking.assignedDriver || nearestDriverFor(booking);
+  }
+
+  writeBookings(bookings);
+  return booking;
+}
+
+function listDriverJobs() {
+  return readBookings()
+    .map((booking) => advanceBookingForCustomer(booking))
+    .filter((booking) => ["driver_assigned", "driver_en_route", "goods_collected"].includes(booking.status));
+}
+
+function respondToDriverJob(id, action) {
+  const bookings = readBookings();
+  const booking = bookings.find((item) => item.id === id);
+
+  if (!booking) return null;
+
+  advanceBookingForCustomer(booking);
+
+  if (action === "accept") {
+    if (booking.status !== "driver_assigned") {
+      throw new Error("Job is not waiting for driver approval");
+    }
+
+    booking.driverResponse = {
+      status: "accepted",
+      at: new Date().toISOString(),
+      driverId: booking.assignedDriver?.id || null
+    };
+    pushStatus(booking, "driver_en_route", "driver");
+  } else if (action === "decline") {
+    if (booking.status !== "driver_assigned") {
+      throw new Error("Job is not waiting for driver approval");
+    }
+
+    booking.driverResponse = {
+      status: "declined",
+      at: new Date().toISOString(),
+      driverId: booking.assignedDriver?.id || null
+    };
+    booking.assignedDriver = null;
+    pushStatus(booking, "dispatcher_notified", "driver");
+  } else if (action === "collected") {
+    if (booking.status !== "driver_en_route") {
+      throw new Error("Job must be accepted before collection");
+    }
+
+    pushStatus(booking, "goods_collected", "driver");
+  } else if (action === "delivered") {
+    if (booking.status !== "goods_collected") {
+      throw new Error("Goods must be collected before delivery");
+    }
+
+    pushStatus(booking, "delivered", "driver");
+  } else {
+    throw new Error("Invalid driver response");
   }
 
   writeBookings(bookings);
@@ -527,7 +580,7 @@ async function handleApi(request, response, pathname) {
     }
 
     if (request.method === "GET" && pathname === "/api/driver/jobs") {
-      const jobs = readBookings().filter((booking) => booking.status === "driver_assigned");
+      const jobs = listDriverJobs();
       sendJson(response, 200, { jobs });
       return;
     }
@@ -572,6 +625,20 @@ async function handleApi(request, response, pathname) {
       }
 
       sendJson(response, 200, { session });
+      return;
+    }
+
+    const driverResponseMatch = pathname.match(/^\/api\/driver\/jobs\/([^/]+)\/respond$/);
+    if (request.method === "POST" && driverResponseMatch) {
+      const body = await readJsonBody(request);
+      const booking = respondToDriverJob(driverResponseMatch[1], body.action);
+
+      if (!booking) {
+        sendJson(response, 404, { error: "Job not found" });
+        return;
+      }
+
+      sendJson(response, 200, { booking });
       return;
     }
 

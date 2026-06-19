@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LoadLink | Driver Jobs</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="driver.html" aria-label="LoadLink driver home">
+        <span class="brand-mark">LL</span>
+        <span>
+          <strong>LoadLink</strong>
+          <small>Driver jobs</small>
+        </span>
+      </a>
+      <nav class="desktop-nav" aria-label="Driver navigation">
+        <a href="driver.html">Jobs</a>
+        <a href="index.html">Customer site</a>
+      </nav>
+      <button class="header-action" type="button" id="refreshJobsBtn">Refresh jobs</button>
+    </header>
+
+    <main class="tracking-page">
+      <section class="tracking-hero" aria-labelledby="driver-title">
+        <p class="eyebrow">Driver website</p>
+        <h1 id="driver-title">Respond to assigned LoadLink jobs</h1>
+        <p id="driverIntro">Jobs appear here after payment is confirmed and dispatch assigns the nearest suitable driver.</p>
+      </section>
+
+      <section class="driver-workspace">
+        <section class="product-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="section-kicker">Assigned work</p>
+              <h2>Job queue</h2>
+            </div>
+            <span class="status-pill neutral" id="driverQueueStatus">Loading</span>
+          </div>
+
+          <div class="driver-job-list" id="driverJobList">
+            <p class="fine-print">Loading assigned jobs...</p>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div>
+        <strong>LoadLink Driver</strong>
+        <p>Separate driver website for accepting assigned courier jobs and updating trip progress.</p>
+      </div>
+      <a href="index.html">Customer site</a>
+    </footer>
+
+    <script src="driver.js"></script>
+  </body>
+</html>

@@ -1,7 +1,7 @@
 const statusMap = {
   awaiting_payment: { label: "Awaiting payment", className: "warning", timelineIndex: 0 },
   dispatcher_notified: { label: "Dispatcher notified", className: "warning", timelineIndex: 1 },
-  driver_assigned: { label: "Driver assigned", className: "active", timelineIndex: 2 },
+  driver_assigned: { label: "Driver reviewing job", className: "warning", timelineIndex: 2 },
   driver_en_route: { label: "Driver on the way", className: "active", timelineIndex: 3 },
   goods_collected: { label: "Goods collected", className: "active", timelineIndex: 4 },
   delivered: { label: "Delivered", className: "complete", timelineIndex: 5 }

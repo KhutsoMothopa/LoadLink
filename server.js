@@ -14,7 +14,8 @@ const dispatcherEmailsFile = path.join(dataDir, "dispatcher-emails.json");
 const gatewayName = process.env.PAYMENT_GATEWAY || "LoadLink Gateway Sandbox";
 const activeDriverId = process.env.LOADLINK_DRIVER_ID || "DRV-101";
 const dispatcherEmail = process.env.DISPATCHER_EMAIL || "clementmothopa@gmail.com";
-const noReplyEmail = process.env.NO_REPLY_EMAIL || "no-reply@loadlink.co.za";
+const dispatchFromEmail = process.env.DISPATCH_FROM_EMAIL || "dispatch@loadlink.co.za";
+const dispatchFromName = process.env.DISPATCH_FROM_NAME || "LoadLink Dispatch";
 
 const locations = {
   sandton: { label: "Sandton", address: "Sandton City, 83 Rivonia Road, Sandton", lat: -26.1076, lng: 28.0567 },
@@ -462,12 +463,14 @@ function buildDispatcherEmail(booking) {
     "",
     "Please assign the nearest available driver from the dispatcher workflow.",
     "",
-    "This is an automated no-reply LoadLink notification."
+    "This is an automated LoadLink dispatch notification."
   ].join("\n");
 
   return {
     to: dispatcherEmail,
-    from: noReplyEmail,
+    from: `${dispatchFromName} <${dispatchFromEmail}>`,
+    fromEmail: dispatchFromEmail,
+    fromName: dispatchFromName,
     subject,
     text
   };
@@ -551,12 +554,12 @@ async function sendSmtpMail(message) {
       await smtpCommand(socket, `AUTH PLAIN ${credentials}`, [235]);
     }
 
-    await smtpCommand(socket, `MAIL FROM:<${cleanHeader(message.from)}>`, [250]);
+    await smtpCommand(socket, `MAIL FROM:<${cleanHeader(message.fromEmail)}>`, [250]);
     await smtpCommand(socket, `RCPT TO:<${cleanHeader(message.to)}>`, [250, 251]);
     await smtpCommand(socket, "DATA", [354]);
 
     const headers = [
-      `From: LoadLink <${cleanHeader(message.from)}>`,
+      `From: ${cleanHeader(message.fromName)} <${cleanHeader(message.fromEmail)}>`,
       `To: LoadLink Dispatcher <${cleanHeader(message.to)}>`,
       `Subject: ${cleanHeader(message.subject)}`,
       "MIME-Version: 1.0",

@@ -69,7 +69,7 @@ http://127.0.0.1:4173/driver.html
 
 ## Dispatcher email
 
-After payment is confirmed, LoadLink prepares a no-reply dispatch email to:
+After payment is confirmed, LoadLink prepares a dispatcher notification email to:
 
 ```text
 clementmothopa@gmail.com
@@ -79,7 +79,8 @@ For production email delivery, set SMTP environment variables before starting th
 
 ```bash
 DISPATCHER_EMAIL=clementmothopa@gmail.com
-NO_REPLY_EMAIL=no-reply@loadlink.co.za
+DISPATCH_FROM_NAME="LoadLink Dispatch"
+DISPATCH_FROM_EMAIL=dispatch@loadlink.co.za
 SMTP_HOST=smtp.example.com
 SMTP_PORT=465
 SMTP_SECURE=true

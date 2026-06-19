@@ -1,6 +1,6 @@
 # LoadLink Courier Website
 
-MVP website for a bakkie and truck courier marketplace. LoadLink connects customers who need courier or moving services with available owner-drivers.
+Customer website for a bakkie and truck courier marketplace. LoadLink lets customers request transport, pay for the trip, and track delivery progress while the dispatcher finds the nearest suitable driver behind the scenes.
 
 ## What is included
 
@@ -8,8 +8,9 @@ MVP website for a bakkie and truck courier marketplace. LoadLink connects custom
 - Distance-based demo price calculation
 - Vehicle and load type selection
 - Customer confirmation flow
-- Driver trip acceptance and status flow
-- Operations trip monitor
+- Customer payment flow
+- Customer delivery tracking
+- Dispatcher notification and nearest-driver assignment simulation
 - Server-side quote calculation
 - Address geocoding foundation with service-area fallback
 - Booking API with lightweight JSON persistence
@@ -41,7 +42,7 @@ You can also open `index.html` directly in your browser.
 
 ## Product direction
 
-The next milestone should connect the geocoding foundation to a real mapping provider, then add customer accounts, driver accounts, payment handling, live driver notifications, and a driver mobile app.
+The next milestone should connect the geocoding foundation to a real mapping provider and payment gateway. Driver tools and dispatcher tools should be built as separate products from this customer website.
 
 ## Current API routes
 
@@ -51,5 +52,11 @@ The next milestone should connect the geocoding foundation to a real mapping pro
 - `POST /api/quote`
 - `POST /api/bookings`
 - `GET /api/bookings/current`
+- `POST /api/bookings/:id/payment`
+
+## Internal foundation routes
+
+These are backend foundations for future dispatcher and driver products, not visible customer website tools.
+
 - `PATCH /api/bookings/:id/status`
 - `GET /api/driver/jobs`

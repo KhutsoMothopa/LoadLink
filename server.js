@@ -40,7 +40,14 @@ const loadFees = {
   construction: { label: "Construction material", fee: 140 }
 };
 
-const allowedStatuses = ["confirmed", "accepted", "pickup", "delivered"];
+const allowedStatuses = ["dispatcher_notified", "driver_assigned", "driver_en_route", "goods_collected", "delivered"];
+
+const driverPool = [
+  { id: "DRV-101", name: "Thabo M.", vehicleTypes: ["bakkie", "canopy"], lat: -26.116, lng: 28.058, rating: 4.9 },
+  { id: "DRV-102", name: "Lerato K.", vehicleTypes: ["bakkie", "smallTruck"], lat: -26.151, lng: 28.041, rating: 4.8 },
+  { id: "DRV-103", name: "Mandla S.", vehicleTypes: ["smallTruck", "largeTruck"], lat: -25.999, lng: 28.126, rating: 4.7 },
+  { id: "DRV-104", name: "Nomsa P.", vehicleTypes: ["canopy", "largeTruck"], lat: -25.861, lng: 28.188, rating: 4.9 }
+];
 
 const contentTypes = {
   ".html": "text/html; charset=utf-8",
@@ -221,8 +228,28 @@ function calculateQuote(input) {
     price,
     driverPayout,
     platformMargin,
+    paymentRequired: price,
     routeSource: pickup.confidence === "estimated" || dropoff.confidence === "estimated" ? "Estimated from service area" : "Address matched",
     eta: vehicle.eta + Math.round(distance / 8)
+  };
+}
+
+function nearestDriverFor(booking) {
+  const availableDrivers = driverPool.filter((driver) => driver.vehicleTypes.includes(booking.vehicleKey));
+  const ranked = availableDrivers.length ? availableDrivers : driverPool;
+  const nearest = ranked
+    .map((driver) => ({
+      ...driver,
+      distanceToPickup: distanceKm({ lat: driver.lat, lng: driver.lng }, booking.pickup)
+    }))
+    .sort((a, b) => a.distanceToPickup - b.distanceToPickup)[0];
+
+  return {
+    id: nearest.id,
+    name: nearest.name,
+    vehicle: booking.vehicle.label,
+    rating: nearest.rating,
+    distanceToPickup: Number(nearest.distanceToPickup.toFixed(1))
   };
 }
 
@@ -232,7 +259,7 @@ function createBooking(input) {
 
   return {
     id: `LL-${Date.now().toString().slice(-6)}`,
-    status: "confirmed",
+    status: "dispatcher_notified",
     customerName: String(input.customerName || "Customer").trim(),
     customerPhone: String(input.customerPhone || "Not provided").trim(),
     pickupDate: String(input.pickupDate || new Date().toISOString().slice(0, 10)),
@@ -242,10 +269,22 @@ function createBooking(input) {
     helpers: Boolean(input.helpers),
     stairs: Boolean(input.stairs),
     notes: String(input.notes || "").trim(),
+    payment: {
+      status: "unpaid",
+      method: null,
+      reference: null,
+      paidAt: null
+    },
+    dispatcher: {
+      notified: true,
+      name: "LoadLink Dispatch Desk",
+      notifiedAt: now,
+      searchStartedAt: now
+    },
     assignedDriver: null,
     createdAt: now,
     updatedAt: now,
-    statusHistory: [{ status: "confirmed", at: now, actor: "customer" }],
+    statusHistory: [{ status: "dispatcher_notified", at: now, actor: "customer" }],
     ...quote
   };
 }
@@ -253,6 +292,56 @@ function createBooking(input) {
 function latestActiveBooking(bookings) {
   const active = bookings.filter((booking) => booking.status !== "delivered");
   return active[active.length - 1] || bookings[bookings.length - 1] || null;
+}
+
+function pushStatus(booking, status, actor = "system") {
+  if (booking.status === status) return;
+
+  booking.status = status;
+  booking.updatedAt = new Date().toISOString();
+  booking.statusHistory = booking.statusHistory || [];
+  booking.statusHistory.push({ status, at: booking.updatedAt, actor });
+}
+
+function advanceBookingForCustomer(booking) {
+  if (!booking || booking.status === "delivered") return booking;
+
+  const ageSeconds = (Date.now() - new Date(booking.createdAt).getTime()) / 1000;
+
+  if (ageSeconds >= 6 && booking.status === "dispatcher_notified") {
+    booking.assignedDriver = booking.assignedDriver || nearestDriverFor(booking);
+    pushStatus(booking, "driver_assigned");
+  }
+
+  if (ageSeconds >= 12 && booking.status === "driver_assigned") {
+    pushStatus(booking, "driver_en_route");
+  }
+
+  if (ageSeconds >= 20 && booking.status === "driver_en_route") {
+    pushStatus(booking, "goods_collected");
+  }
+
+  if (ageSeconds >= 30 && booking.status === "goods_collected") {
+    pushStatus(booking, "delivered");
+  }
+
+  return booking;
+}
+
+function getCurrentBooking() {
+  const bookings = readBookings();
+  const booking = latestActiveBooking(bookings);
+
+  if (!booking) return null;
+
+  const previousStatus = booking.status;
+  advanceBookingForCustomer(booking);
+
+  if (booking.status !== previousStatus || (booking.assignedDriver && !bookings.find((item) => item.id === booking.id).assignedDriver)) {
+    writeBookings(bookings);
+  }
+
+  return booking;
 }
 
 function updateBookingStatus(id, status) {
@@ -267,20 +356,34 @@ function updateBookingStatus(id, status) {
     return null;
   }
 
-  booking.status = status;
-  booking.updatedAt = new Date().toISOString();
-  booking.statusHistory = booking.statusHistory || [];
-  booking.statusHistory.push({ status, at: booking.updatedAt, actor: "driver" });
+  pushStatus(booking, status, "dispatcher");
 
-  if (status === "accepted") {
-    booking.assignedDriver = {
-      name: "Thabo M.",
-      vehicle: booking.vehicle.label,
-      rating: 4.9
-    };
+  if (status === "driver_assigned") {
+    booking.assignedDriver = booking.assignedDriver || nearestDriverFor(booking);
   }
 
   writeBookings(bookings);
+  return booking;
+}
+
+function markBookingPaid(id, input) {
+  const bookings = readBookings();
+  const booking = bookings.find((item) => item.id === id);
+
+  if (!booking) return null;
+
+  const now = new Date().toISOString();
+  booking.payment = {
+    status: "paid",
+    method: input.method || "card",
+    reference: `PAY-${Date.now().toString().slice(-7)}`,
+    paidAt: now
+  };
+  booking.updatedAt = now;
+  booking.statusHistory = booking.statusHistory || [];
+  booking.statusHistory.push({ status: "payment_received", at: now, actor: "customer" });
+  writeBookings(bookings);
+
   return booking;
 }
 
@@ -313,7 +416,7 @@ async function handleApi(request, response, pathname) {
     }
 
     if (request.method === "GET" && pathname === "/api/bookings/current") {
-      sendJson(response, 200, { booking: latestActiveBooking(readBookings()) });
+      sendJson(response, 200, { booking: getCurrentBooking() });
       return;
     }
 
@@ -324,7 +427,7 @@ async function handleApi(request, response, pathname) {
     }
 
     if (request.method === "GET" && pathname === "/api/driver/jobs") {
-      const jobs = readBookings().filter((booking) => booking.status === "confirmed");
+      const jobs = readBookings().filter((booking) => booking.status === "driver_assigned");
       sendJson(response, 200, { jobs });
       return;
     }
@@ -343,6 +446,20 @@ async function handleApi(request, response, pathname) {
     if (request.method === "PATCH" && statusMatch) {
       const body = await readJsonBody(request);
       const booking = updateBookingStatus(statusMatch[1], body.status);
+
+      if (!booking) {
+        sendJson(response, 404, { error: "Booking not found" });
+        return;
+      }
+
+      sendJson(response, 200, { booking });
+      return;
+    }
+
+    const paymentMatch = pathname.match(/^\/api\/bookings\/([^/]+)\/payment$/);
+    if (request.method === "POST" && paymentMatch) {
+      const body = await readJsonBody(request);
+      const booking = markBookingPaid(paymentMatch[1], body);
 
       if (!booking) {
         sendJson(response, 404, { error: "Booking not found" });

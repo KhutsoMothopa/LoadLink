@@ -17,8 +17,8 @@
       </a>
       <nav class="desktop-nav" aria-label="Main navigation">
         <a href="#book">Book</a>
-        <a href="#driver">Driver</a>
-        <a href="#operations">Operations</a>
+        <a href="#payment">Payment</a>
+        <a href="#tracking">Tracking</a>
         <a href="#roadmap">Roadmap</a>
       </nav>
       <a class="header-action" href="#book">Request vehicle</a>
@@ -35,7 +35,7 @@
           </p>
           <div class="hero-actions">
             <a class="primary-button" href="#book">Create booking</a>
-            <a class="secondary-button" href="#driver">View driver console</a>
+            <a class="secondary-button" href="#tracking">Track delivery</a>
           </div>
           <dl class="trust-strip">
             <div>
@@ -199,10 +199,6 @@
               <dd id="loadText">Bed or mattress</dd>
             </div>
             <div>
-              <dt>Driver payout</dt>
-              <dd id="driverPayout">R 327</dd>
-            </div>
-            <div>
               <dt>ETA to pickup</dt>
               <dd id="etaText">8 min</dd>
             </div>
@@ -215,53 +211,44 @@
         </aside>
       </section>
 
-      <section class="console-grid">
-        <section class="product-panel" id="driver" aria-labelledby="driver-title">
+      <section class="customer-grid">
+        <section class="product-panel" id="payment" aria-labelledby="payment-title">
           <div class="panel-heading">
             <div>
-              <p class="section-kicker">Driver console</p>
-              <h2 id="driver-title">Available trip request</h2>
+              <p class="section-kicker">Secure payment</p>
+              <h2 id="payment-title">Pay for the request</h2>
             </div>
-            <span class="status-pill" id="driverStatus">No active request</span>
-          </div>
-
-          <div class="driver-card">
-            <div class="driver-avatar">TM</div>
-            <div>
-              <h3>Thabo M.</h3>
-              <p id="driverMeta">Verified bakkie driver - 4.9 rating - 2.1 km away</p>
-            </div>
+            <span class="status-pill neutral" id="paymentStatus">Not requested</span>
           </div>
 
           <dl class="job-metrics">
             <div>
-              <dt>Trip fare</dt>
-              <dd id="driverFare">R 436</dd>
+              <dt>Amount due</dt>
+              <dd id="paymentAmount">R 436</dd>
             </div>
             <div>
-              <dt>Driver earns</dt>
-              <dd id="driverEarns">R 327</dd>
+              <dt>Payment method</dt>
+              <dd>Card or EFT</dd>
             </div>
             <div>
-              <dt>Route</dt>
-              <dd id="driverRoute">Sandton to Rosebank</dd>
+              <dt>Reference</dt>
+              <dd id="paymentReference">Pending</dd>
             </div>
           </dl>
+          <p class="fine-print">This demo uses a mock payment confirmation. Production will connect to a payment gateway before live launch.</p>
 
           <div class="button-stack">
-            <button class="primary-button" type="button" id="acceptBtn" disabled>Accept trip</button>
-            <button class="secondary-dark-button" type="button" id="pickupBtn" disabled>Mark pickup started</button>
-            <button class="secondary-dark-button" type="button" id="deliverBtn" disabled>Mark delivered</button>
+            <button class="primary-button" type="button" id="payBtn" disabled>Pay securely</button>
           </div>
         </section>
 
-        <section class="product-panel" id="operations" aria-labelledby="operations-title">
+        <section class="product-panel" id="tracking" aria-labelledby="tracking-title">
           <div class="panel-heading">
             <div>
-              <p class="section-kicker">Operations control</p>
-              <h2 id="operations-title">Trip monitor</h2>
+              <p class="section-kicker">Customer tracking</p>
+              <h2 id="tracking-title">Follow your delivery</h2>
             </div>
-            <span class="status-pill neutral" id="opsStatus">Draft</span>
+            <span class="status-pill neutral" id="tripStatus">Draft</span>
           </div>
 
           <dl class="ops-summary">
@@ -270,12 +257,12 @@
               <dd id="bookingId">Not confirmed</dd>
             </div>
             <div>
-              <dt>Customer</dt>
-              <dd id="opsCustomer">Khutso Mothopa</dd>
+              <dt>Dispatcher</dt>
+              <dd id="dispatchNotice">Waiting for request</dd>
             </div>
             <div>
-              <dt>Platform margin</dt>
-              <dd id="platformMargin">R 109</dd>
+              <dt>Assigned driver</dt>
+              <dd id="assignedDriver">Not assigned yet</dd>
             </div>
             <div>
               <dt>Scheduled pickup</dt>
@@ -285,8 +272,9 @@
 
           <ol class="timeline" id="timeline">
             <li class="current">Quote prepared</li>
-            <li>Awaiting customer confirmation</li>
-            <li>Driver notified</li>
+            <li>Request sent to dispatcher</li>
+            <li>Nearest driver assigned</li>
+            <li>Driver on the way</li>
             <li>Goods collected</li>
             <li>Delivery complete</li>
           </ol>
@@ -298,7 +286,7 @@
           <p class="section-kicker">Build path</p>
           <h2 id="roadmap-title">From MVP to launch product</h2>
           <p>
-            This version keeps the product logic local so we can shape the experience quickly. The next production steps are backend, maps, accounts, payments, and driver mobile app.
+            This customer website handles requests, payment, and delivery tracking. Dispatcher and driver tools will live in separate products.
           </p>
         </div>
         <div class="roadmap-list">
@@ -309,13 +297,13 @@
           </article>
           <article>
             <span>02</span>
-            <h3>Driver app</h3>
-            <p>Trip offers, navigation, availability, earnings, and ratings.</p>
+            <h3>Payment gateway</h3>
+            <p>Connect secure card, EFT, and wallet payments with receipts.</p>
           </article>
           <article>
             <span>03</span>
             <h3>Operations backend</h3>
-            <p>Dispatch tools, support visibility, pricing rules, and reporting.</p>
+            <p>Separate middleman dashboard for dispatch, support visibility, pricing rules, and reporting.</p>
           </article>
         </div>
       </section>
@@ -324,7 +312,7 @@
     <footer class="site-footer">
       <div>
         <strong>LoadLink</strong>
-        <p>Courier marketplace for customers, bakkie owners, and truck drivers.</p>
+        <p>Customer website for courier requests, payments, and delivery tracking.</p>
       </div>
       <a href="#book">Create another booking</a>
     </footer>

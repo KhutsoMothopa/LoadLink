@@ -1,6 +1,6 @@
 # LoadLink Courier Website
 
-Prototype e-hailing website for bakkies and trucks. LoadLink connects customers who need courier or moving services with available owner-drivers.
+MVP website for a bakkie and truck courier marketplace. LoadLink connects customers who need courier or moving services with available owner-drivers.
 
 ## What is included
 
@@ -8,7 +8,8 @@ Prototype e-hailing website for bakkies and trucks. LoadLink connects customers 
 - Distance-based demo price calculation
 - Vehicle and load type selection
 - Customer confirmation flow
-- Mock driver notification and acceptance flow
+- Driver trip acceptance and status flow
+- Operations trip monitor
 - Formal, professional visual style
 
 ## Open in VS Code
@@ -35,6 +36,6 @@ http://127.0.0.1:4173
 
 You can also open `index.html` directly in your browser.
 
-## Next build step
+## Product direction
 
-The next milestone should connect the estimate form to a real mapping/geocoding service, then add customer accounts, driver accounts, payment handling, and live driver notifications.
+The next milestone should connect the estimate form to a real mapping/geocoding service, then add customer accounts, driver accounts, payment handling, live driver notifications, and a driver mobile app.

@@ -10,6 +10,7 @@ Customer website for a bakkie and truck courier marketplace. LoadLink lets custo
 - Customer confirmation flow
 - Dedicated payment method page before dispatch notification
 - Gateway-style checkout session before payment confirmation
+- Dispatcher email notification after confirmed payment
 - Dedicated customer tracking page
 - Separate driver website for assigned job responses
 - Driver availability and current-area updates for dispatch assignment
@@ -65,6 +66,28 @@ Driver jobs are available at:
 ```text
 http://127.0.0.1:4173/driver.html
 ```
+
+## Dispatcher email
+
+After payment is confirmed, LoadLink prepares a no-reply dispatch email to:
+
+```text
+clementmothopa@gmail.com
+```
+
+For production email delivery, set SMTP environment variables before starting the server:
+
+```bash
+DISPATCHER_EMAIL=clementmothopa@gmail.com
+NO_REPLY_EMAIL=no-reply@loadlink.co.za
+SMTP_HOST=smtp.example.com
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_USER=your-smtp-user
+SMTP_PASS=your-smtp-password
+```
+
+When SMTP is not configured, the prototype records the same dispatcher email in `data/dispatcher-emails.json` for local testing.
 
 ## Product direction
 

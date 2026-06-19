@@ -1,6 +1,8 @@
 const http = require("http");
 const fs = require("fs");
+const net = require("net");
 const path = require("path");
+const tls = require("tls");
 
 const root = __dirname;
 const port = Number(process.env.PORT || 4173);
@@ -8,8 +10,11 @@ const dataDir = path.join(root, "data");
 const bookingsFile = path.join(dataDir, "bookings.json");
 const paymentSessionsFile = path.join(dataDir, "payment-sessions.json");
 const driversFile = path.join(dataDir, "drivers.json");
+const dispatcherEmailsFile = path.join(dataDir, "dispatcher-emails.json");
 const gatewayName = process.env.PAYMENT_GATEWAY || "LoadLink Gateway Sandbox";
 const activeDriverId = process.env.LOADLINK_DRIVER_ID || "DRV-101";
+const dispatcherEmail = process.env.DISPATCHER_EMAIL || "clementmothopa@gmail.com";
+const noReplyEmail = process.env.NO_REPLY_EMAIL || "no-reply@loadlink.co.za";
 
 const locations = {
   sandton: { label: "Sandton", address: "Sandton City, 83 Rivonia Road, Sandton", lat: -26.1076, lng: 28.0567 },
@@ -84,6 +89,10 @@ function ensureStore() {
   if (!fs.existsSync(driversFile)) {
     fs.writeFileSync(driversFile, `${JSON.stringify(defaultDrivers(), null, 2)}\n`);
   }
+
+  if (!fs.existsSync(dispatcherEmailsFile)) {
+    fs.writeFileSync(dispatcherEmailsFile, "[]\n");
+  }
 }
 
 function readBookings() {
@@ -145,6 +154,20 @@ function readDrivers() {
 function writeDrivers(drivers) {
   ensureStore();
   fs.writeFileSync(driversFile, `${JSON.stringify(drivers, null, 2)}\n`);
+}
+
+function readDispatcherEmails() {
+  ensureStore();
+  try {
+    return JSON.parse(fs.readFileSync(dispatcherEmailsFile, "utf8"));
+  } catch (error) {
+    return [];
+  }
+}
+
+function writeDispatcherEmails(emails) {
+  ensureStore();
+  fs.writeFileSync(dispatcherEmailsFile, `${JSON.stringify(emails, null, 2)}\n`);
 }
 
 function sendJson(response, statusCode, payload) {
@@ -403,6 +426,190 @@ function driverEarnings(driverId = activeDriverId, period = "week") {
   };
 }
 
+function formatCurrency(value) {
+  return `R ${Math.round(Number(value || 0)).toLocaleString("en-ZA")}`;
+}
+
+function cleanHeader(value) {
+  return String(value || "").replace(/[\r\n]+/g, " ").trim();
+}
+
+function smtpConfigured() {
+  return Boolean(process.env.SMTP_HOST && process.env.SMTP_PORT);
+}
+
+function smtpEscapeBody(value) {
+  return String(value || "").replace(/\r?\n/g, "\r\n").replace(/^\./gm, "..");
+}
+
+function buildDispatcherEmail(booking) {
+  const subject = `New paid LoadLink request ${booking.id}`;
+  const text = [
+    "A customer has paid for a LoadLink courier request and it is ready for dispatch.",
+    "",
+    `Booking ID: ${booking.id}`,
+    `Customer: ${booking.customerName}`,
+    `Phone: ${booking.customerPhone}`,
+    `Vehicle: ${booking.vehicle.label}`,
+    `Load: ${booking.load.label}`,
+    `Pickup: ${booking.pickupAddress || booking.pickup.address}`,
+    `Drop-off: ${booking.dropoffAddress || booking.dropoff.address}`,
+    `Distance: ${booking.distance.toFixed(1)} km`,
+    `Total paid: ${formatCurrency(booking.price)}`,
+    `Driver payout estimate: ${formatCurrency(booking.driverPayout)}`,
+    `Pickup date/time: ${booking.pickupDate} at ${booking.pickupTime}`,
+    `Payment reference: ${booking.payment?.reference || "Not provided"}`,
+    "",
+    "Please assign the nearest available driver from the dispatcher workflow.",
+    "",
+    "This is an automated no-reply LoadLink notification."
+  ].join("\n");
+
+  return {
+    to: dispatcherEmail,
+    from: noReplyEmail,
+    subject,
+    text
+  };
+}
+
+function readSmtpResponse(socket) {
+  return new Promise((resolve, reject) => {
+    let responseText = "";
+
+    function onData(chunk) {
+      responseText += chunk.toString("utf8");
+      const lines = responseText.split(/\r?\n/).filter(Boolean);
+      const lastLine = lines[lines.length - 1] || "";
+
+      if (/^\d{3} /.test(lastLine)) {
+        socket.off("data", onData);
+        socket.off("error", onError);
+        resolve({ code: Number(lastLine.slice(0, 3)), text: responseText });
+      }
+    }
+
+    function onError(error) {
+      socket.off("data", onData);
+      socket.off("error", onError);
+      reject(error);
+    }
+
+    socket.on("data", onData);
+    socket.on("error", onError);
+  });
+}
+
+async function smtpCommand(socket, command, expectedCodes) {
+  if (command) {
+    socket.write(`${command}\r\n`);
+  }
+
+  const response = await readSmtpResponse(socket);
+
+  if (!expectedCodes.includes(response.code)) {
+    throw new Error(`SMTP command failed: ${response.text.trim()}`);
+  }
+
+  return response;
+}
+
+function connectSmtp() {
+  const portNumber = Number(process.env.SMTP_PORT || 465);
+  const secure = process.env.SMTP_SECURE ? process.env.SMTP_SECURE !== "false" : portNumber === 465;
+  const options = {
+    host: process.env.SMTP_HOST,
+    port: portNumber,
+    servername: process.env.SMTP_HOST
+  };
+
+  return new Promise((resolve, reject) => {
+    const socket = secure ? tls.connect(options, onConnect) : net.connect(options, onConnect);
+
+    function onConnect() {
+      resolve(socket);
+    }
+
+    socket.setTimeout(15000, () => {
+      socket.destroy(new Error("SMTP connection timed out"));
+    });
+    socket.once("error", reject);
+  });
+}
+
+async function sendSmtpMail(message) {
+  const socket = await connectSmtp();
+  const username = process.env.SMTP_USER;
+  const password = process.env.SMTP_PASS;
+
+  try {
+    await smtpCommand(socket, null, [220]);
+    await smtpCommand(socket, `EHLO ${process.env.SMTP_HELO || "loadlink.local"}`, [250]);
+
+    if (username && password) {
+      const credentials = Buffer.from(`\u0000${username}\u0000${password}`).toString("base64");
+      await smtpCommand(socket, `AUTH PLAIN ${credentials}`, [235]);
+    }
+
+    await smtpCommand(socket, `MAIL FROM:<${cleanHeader(message.from)}>`, [250]);
+    await smtpCommand(socket, `RCPT TO:<${cleanHeader(message.to)}>`, [250, 251]);
+    await smtpCommand(socket, "DATA", [354]);
+
+    const headers = [
+      `From: LoadLink <${cleanHeader(message.from)}>`,
+      `To: LoadLink Dispatcher <${cleanHeader(message.to)}>`,
+      `Subject: ${cleanHeader(message.subject)}`,
+      "MIME-Version: 1.0",
+      "Content-Type: text/plain; charset=utf-8",
+      "Content-Transfer-Encoding: 8bit"
+    ].join("\r\n");
+
+    socket.write(`${headers}\r\n\r\n${smtpEscapeBody(message.text)}\r\n.\r\n`);
+    await smtpCommand(socket, null, [250]);
+    await smtpCommand(socket, "QUIT", [221]);
+  } finally {
+    socket.end();
+  }
+}
+
+function saveDispatcherEmail(record) {
+  const emails = readDispatcherEmails();
+  emails.push(record);
+  writeDispatcherEmails(emails);
+}
+
+async function notifyDispatcherByEmail(booking) {
+  const message = buildDispatcherEmail(booking);
+  const notification = {
+    id: `EMAIL-${Date.now().toString().slice(-8)}`,
+    bookingId: booking.id,
+    to: message.to,
+    from: message.from,
+    subject: message.subject,
+    text: message.text,
+    createdAt: new Date().toISOString(),
+    delivery: smtpConfigured() ? "smtp" : "local-outbox",
+    status: "queued"
+  };
+
+  if (!smtpConfigured()) {
+    saveDispatcherEmail(notification);
+    return notification;
+  }
+
+  try {
+    await sendSmtpMail(message);
+    notification.status = "sent";
+    notification.sentAt = new Date().toISOString();
+  } catch (error) {
+    notification.status = "failed";
+    notification.error = error.message;
+  }
+
+  saveDispatcherEmail(notification);
+  return notification;
+}
+
 function createBooking(input) {
   const now = new Date().toISOString();
   const quote = calculateQuote(input);
@@ -583,29 +790,52 @@ function respondToDriverJob(id, action, driverId = activeDriverId) {
   return booking;
 }
 
-function markBookingPaid(id, input) {
+async function markBookingPaid(id, input = {}) {
   const bookings = readBookings();
   const booking = bookings.find((item) => item.id === id);
 
   if (!booking) return null;
 
   const now = new Date().toISOString();
-  booking.payment = {
-    status: "paid",
-    method: input.method || "card",
-    reference: input.reference || `PAY-${Date.now().toString().slice(-7)}`,
-    paidAt: now
-  };
-  booking.dispatcher = {
-    notified: true,
-    name: "LoadLink Dispatch Desk",
-    notifiedAt: now,
-    searchStartedAt: now
-  };
-  booking.updatedAt = now;
-  booking.statusHistory = booking.statusHistory || [];
-  booking.statusHistory.push({ status: "payment_received", at: now, actor: "customer" });
-  pushStatus(booking, "dispatcher_notified", "system");
+  const wasAlreadyPaid = booking.payment?.status === "paid";
+
+  if (!wasAlreadyPaid) {
+    booking.payment = {
+      status: "paid",
+      method: input.method || "card",
+      reference: input.reference || `PAY-${Date.now().toString().slice(-7)}`,
+      paidAt: now
+    };
+    booking.dispatcher = {
+      ...(booking.dispatcher || {}),
+      notified: true,
+      name: "LoadLink Dispatch Desk",
+      notifiedAt: now,
+      searchStartedAt: now
+    };
+    booking.updatedAt = now;
+    booking.statusHistory = booking.statusHistory || [];
+    booking.statusHistory.push({ status: "payment_received", at: now, actor: "customer" });
+    pushStatus(booking, "dispatcher_notified", "system");
+  }
+
+  if (!booking.dispatcher?.emailNotification) {
+    const emailNotification = await notifyDispatcherByEmail(booking);
+    booking.dispatcher = {
+      ...(booking.dispatcher || {}),
+      emailNotification: {
+        id: emailNotification.id,
+        to: emailNotification.to,
+        from: emailNotification.from,
+        status: emailNotification.status,
+        delivery: emailNotification.delivery,
+        sentAt: emailNotification.sentAt || null,
+        error: emailNotification.error || null
+      }
+    };
+    booking.updatedAt = new Date().toISOString();
+  }
+
   writeBookings(bookings);
 
   return booking;
@@ -657,7 +887,7 @@ function getCheckoutSession(id) {
   };
 }
 
-function confirmCheckoutSession(id) {
+async function confirmCheckoutSession(id) {
   const sessions = readPaymentSessions();
   const session = sessions.find((item) => item.id === id);
 
@@ -670,7 +900,7 @@ function confirmCheckoutSession(id) {
     writePaymentSessions(sessions);
   }
 
-  const booking = markBookingPaid(session.bookingId, {
+  const booking = await markBookingPaid(session.bookingId, {
     method: session.method,
     reference: session.reference
   });
@@ -785,7 +1015,7 @@ async function handleApi(request, response, pathname) {
 
     const checkoutConfirmMatch = pathname.match(/^\/api\/payments\/sessions\/([^/]+)\/confirm$/);
     if (request.method === "POST" && checkoutConfirmMatch) {
-      const session = confirmCheckoutSession(checkoutConfirmMatch[1]);
+      const session = await confirmCheckoutSession(checkoutConfirmMatch[1]);
 
       if (!session) {
         sendJson(response, 404, { error: "Payment session not found" });
@@ -827,7 +1057,7 @@ async function handleApi(request, response, pathname) {
     const paymentMatch = pathname.match(/^\/api\/bookings\/([^/]+)\/payment$/);
     if (request.method === "POST" && paymentMatch) {
       const body = await readJsonBody(request);
-      const booking = markBookingPaid(paymentMatch[1], body);
+      const booking = await markBookingPaid(paymentMatch[1], body);
 
       if (!booking) {
         sendJson(response, 404, { error: "Booking not found" });

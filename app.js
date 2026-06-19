@@ -1,27 +1,3 @@
-const locations = {
-  sandton: { label: "Sandton", lat: -26.1076, lng: 28.0567 },
-  rosebank: { label: "Rosebank", lat: -26.1466, lng: 28.0416 },
-  midrand: { label: "Midrand", lat: -25.9992, lng: 28.1263 },
-  soweto: { label: "Soweto", lat: -26.2485, lng: 27.8540 },
-  centurion: { label: "Centurion", lat: -25.8603, lng: 28.1894 },
-  pretoria: { label: "Pretoria CBD", lat: -25.7479, lng: 28.2293 }
-};
-
-const vehicleRates = {
-  bakkie: { label: "Bakkie", base: 280, perKm: 15, eta: 7 },
-  canopy: { label: "Bakkie with canopy", base: 330, perKm: 17, eta: 9 },
-  smallTruck: { label: "Small truck", base: 460, perKm: 23, eta: 12 },
-  largeTruck: { label: "Large truck", base: 680, perKm: 31, eta: 16 }
-};
-
-const loadFees = {
-  bed: { label: "Bed or mattress", fee: 30 },
-  furniture: { label: "Household furniture", fee: 85 },
-  appliance: { label: "Appliance", fee: 60 },
-  business: { label: "Business stock", fee: 95 },
-  construction: { label: "Construction material", fee: 140 }
-};
-
 const statusMap = {
   draft: {
     customer: "Draft quote",
@@ -60,7 +36,6 @@ const statusMap = {
   }
 };
 
-const storageKey = "loadlink.activeTrip";
 const form = document.querySelector("#bookingForm");
 const confirmBtn = document.querySelector("#confirmBtn");
 const resetBtn = document.querySelector("#resetBtn");
@@ -68,7 +43,9 @@ const acceptBtn = document.querySelector("#acceptBtn");
 const pickupBtn = document.querySelector("#pickupBtn");
 const deliverBtn = document.querySelector("#deliverBtn");
 
-let activeTrip = loadTrip();
+let activeTrip = null;
+let draftQuote = null;
+let quoteRequestId = 0;
 
 const formatRand = (value) => `R ${Math.round(value).toLocaleString("en-ZA")}`;
 
@@ -76,57 +53,25 @@ function todayIsoDate() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function distanceKm(start, end) {
-  const earthRadius = 6371;
-  const toRadians = (degree) => degree * (Math.PI / 180);
-  const latDistance = toRadians(end.lat - start.lat);
-  const lngDistance = toRadians(end.lng - start.lng);
-  const startLat = toRadians(start.lat);
-  const endLat = toRadians(end.lat);
-  const a =
-    Math.sin(latDistance / 2) ** 2 +
-    Math.cos(startLat) * Math.cos(endLat) * Math.sin(lngDistance / 2) ** 2;
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+async function apiRequest(path, options = {}) {
+  const response = await fetch(path, {
+    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+    ...options
+  });
 
-  return Math.max(3.5, earthRadius * c * 1.18);
+  const payload = await response.json();
+
+  if (!response.ok) {
+    throw new Error(payload.error || "LoadLink API request failed");
+  }
+
+  return payload;
 }
 
-function calculateQuote() {
-  const pickup = locations[form.pickup.value];
-  const dropoff = locations[form.dropoff.value];
-  const vehicle = vehicleRates[form.vehicle.value];
-  const load = loadFees[form.loadType.value];
-  const helpersFee = document.querySelector("#helpers").checked ? 170 : 0;
-  const stairsFee = document.querySelector("#stairs").checked ? 95 : 0;
-  const distance = distanceKm(pickup, dropoff);
-  const platformBaseFee = 45;
-  const subtotal = vehicle.base + distance * vehicle.perKm + load.fee + helpersFee + stairsFee;
-  const price = subtotal + platformBaseFee;
-  const driverPayout = price * 0.75;
-  const platformMargin = price - driverPayout;
-
+function formPayload() {
   return {
-    pickup,
-    dropoff,
-    vehicle,
-    load,
-    distance,
-    price,
-    driverPayout,
-    platformMargin,
-    eta: vehicle.eta + Math.round(distance / 8)
-  };
-}
-
-function buildTrip(status = "confirmed") {
-  const quote = calculateQuote();
-  const existingId = activeTrip && activeTrip.id ? activeTrip.id : `LL-${Date.now().toString().slice(-6)}`;
-
-  return {
-    id: existingId,
-    status,
-    customerName: form.customerName.value.trim() || "Customer",
-    customerPhone: form.customerPhone.value.trim() || "Not provided",
+    customerName: form.customerName.value.trim(),
+    customerPhone: form.customerPhone.value.trim(),
     pickupKey: form.pickup.value,
     dropoffKey: form.dropoff.value,
     loadTypeKey: form.loadType.value,
@@ -135,26 +80,8 @@ function buildTrip(status = "confirmed") {
     pickupTime: form.pickupTime.value || "10:00",
     helpers: document.querySelector("#helpers").checked,
     stairs: document.querySelector("#stairs").checked,
-    notes: document.querySelector("#loadNotes").value.trim(),
-    createdAt: new Date().toISOString(),
-    ...quote
+    notes: document.querySelector("#loadNotes").value.trim()
   };
-}
-
-function saveTrip() {
-  if (activeTrip) {
-    localStorage.setItem(storageKey, JSON.stringify(activeTrip));
-  } else {
-    localStorage.removeItem(storageKey);
-  }
-}
-
-function loadTrip() {
-  try {
-    return JSON.parse(localStorage.getItem(storageKey));
-  } catch (error) {
-    return null;
-  }
 }
 
 function setPill(element, label, className) {
@@ -175,7 +102,7 @@ function updateQuoteUi(quote) {
   document.querySelector("#loadText").textContent = quote.load.label;
   document.querySelector("#etaText").textContent = `${quote.eta} min`;
   document.querySelector("#driverRoute").textContent = `${quote.pickup.label} to ${quote.dropoff.label}`;
-  document.querySelector("#driverMeta").textContent = `${quote.vehicle.label} driver · 4.9 rating · ${Math.max(1.2, quote.distance / 4).toFixed(1)} km away`;
+  document.querySelector("#driverMeta").textContent = `${quote.vehicle.label} driver - 4.9 rating - ${Math.max(1.2, quote.distance / 4).toFixed(1)} km away`;
   document.querySelector("#heroFare").textContent = formatRand(quote.price);
   document.querySelector("#heroDistance").textContent = `${quote.distance.toFixed(1)} km`;
 }
@@ -222,60 +149,117 @@ function syncFormFromTrip(trip) {
 }
 
 function render() {
-  const quote = activeTrip || calculateQuote();
+  const quote = activeTrip || draftQuote;
+
+  if (!quote) return;
+
   updateQuoteUi(quote);
   updateOpsUi(activeTrip, quote);
   updateStatusUi(activeTrip ? activeTrip.status : "draft");
 }
 
-function refreshDraft() {
-  if (activeTrip && activeTrip.status !== "draft") {
-    activeTrip = null;
-    saveTrip();
+async function refreshDraft() {
+  const requestId = ++quoteRequestId;
+  activeTrip = null;
+
+  try {
+    const payload = await apiRequest("/api/quote", {
+      method: "POST",
+      body: JSON.stringify(formPayload())
+    });
+
+    if (requestId !== quoteRequestId) return;
+
+    draftQuote = payload.quote;
+    render();
+  } catch (error) {
+    setPill(document.querySelector("#opsStatus"), "API offline", "warning");
   }
-  render();
 }
 
-form.addEventListener("change", refreshDraft);
-form.addEventListener("input", refreshDraft);
+async function loadCurrentBooking() {
+  try {
+    const payload = await apiRequest("/api/bookings/current");
 
-confirmBtn.addEventListener("click", () => {
-  activeTrip = buildTrip("confirmed");
-  saveTrip();
-  render();
-  document.querySelector("#driver").scrollIntoView({ behavior: "smooth", block: "start" });
-});
+    if (payload.booking) {
+      activeTrip = payload.booking;
+      draftQuote = payload.booking;
+      syncFormFromTrip(payload.booking);
+      render();
+      return;
+    }
+  } catch (error) {
+    setPill(document.querySelector("#opsStatus"), "API offline", "warning");
+  }
 
-acceptBtn.addEventListener("click", () => {
-  activeTrip = { ...activeTrip, status: "accepted" };
-  saveTrip();
-  render();
-});
+  await refreshDraft();
+}
 
-pickupBtn.addEventListener("click", () => {
-  activeTrip = { ...activeTrip, status: "pickup" };
-  saveTrip();
-  render();
-});
+async function confirmBooking() {
+  confirmBtn.disabled = true;
+  confirmBtn.textContent = "Confirming...";
 
-deliverBtn.addEventListener("click", () => {
-  activeTrip = { ...activeTrip, status: "delivered" };
-  saveTrip();
-  render();
-});
+  try {
+    const payload = await apiRequest("/api/bookings", {
+      method: "POST",
+      body: JSON.stringify(formPayload())
+    });
 
-resetBtn.addEventListener("click", () => {
+    activeTrip = payload.booking;
+    draftQuote = payload.booking;
+    render();
+    document.querySelector("#driver").scrollIntoView({ behavior: "smooth", block: "start" });
+  } catch (error) {
+    setPill(document.querySelector("#opsStatus"), "Booking failed", "warning");
+  } finally {
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = "Confirm booking";
+  }
+}
+
+async function updateTripStatus(status) {
+  if (!activeTrip) return;
+
+  try {
+    const payload = await apiRequest(`/api/bookings/${activeTrip.id}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status })
+    });
+
+    activeTrip = payload.booking;
+    draftQuote = payload.booking;
+    render();
+  } catch (error) {
+    setPill(document.querySelector("#opsStatus"), "Status update failed", "warning");
+  }
+}
+
+async function resetDemo() {
   activeTrip = null;
-  localStorage.removeItem(storageKey);
+  draftQuote = null;
+
+  try {
+    await apiRequest("/api/bookings/current", { method: "DELETE" });
+  } catch (error) {
+    setPill(document.querySelector("#opsStatus"), "Reset failed", "warning");
+  }
+
   form.reset();
   form.customerName.value = "Khutso Mothopa";
   form.customerPhone.value = "+27 72 000 0000";
   form.pickupDate.value = todayIsoDate();
   form.pickupTime.value = "10:00";
   document.querySelector("#loadNotes").value = "Moving one queen bed and base. Customer will meet driver at reception.";
-  render();
-});
+  await refreshDraft();
+}
+
+form.addEventListener("change", refreshDraft);
+form.addEventListener("input", refreshDraft);
+confirmBtn.addEventListener("click", confirmBooking);
+acceptBtn.addEventListener("click", () => updateTripStatus("accepted"));
+pickupBtn.addEventListener("click", () => updateTripStatus("pickup"));
+deliverBtn.addEventListener("click", () => updateTripStatus("delivered"));
+resetBtn.addEventListener("click", resetDemo);
 
 form.pickupDate.value = form.pickupDate.value || todayIsoDate();
-syncFormFromTrip(activeTrip);
-render();
+loadCurrentBooking();

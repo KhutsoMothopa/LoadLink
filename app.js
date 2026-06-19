@@ -1,5 +1,6 @@
 const statusMap = {
   draft: { customer: "Draft quote", className: "neutral" },
+  awaiting_payment: { customer: "Awaiting payment", className: "warning" },
   dispatcher_notified: { customer: "Request sent", className: "warning" },
   driver_assigned: { customer: "Driver accepted", className: "active" },
   driver_en_route: { customer: "Driver on the way", className: "active" },
@@ -153,7 +154,7 @@ async function confirmBooking() {
     activeTrip = payload.booking;
     draftQuote = payload.booking;
     render();
-    window.location.href = "tracking.html";
+    window.location.href = "payment.html";
   } catch (error) {
     setPill(document.querySelector("#bookingStatus"), "Request failed", "warning");
   } finally {
@@ -188,6 +189,6 @@ form.addEventListener("input", refreshDraft);
 confirmBtn.addEventListener("click", confirmBooking);
 resetBtn.addEventListener("click", resetDemo);
 
-confirmBtn.textContent = "Submit request";
+confirmBtn.textContent = "Continue to payment";
 form.pickupDate.value = form.pickupDate.value || todayIsoDate();
 loadCurrentBooking();

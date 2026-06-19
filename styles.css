@@ -582,6 +582,58 @@ a:focus-visible {
   margin-top: 22px;
 }
 
+.payment-options {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.payment-options legend {
+  margin-bottom: 8px;
+  color: #334155;
+  font-weight: 900;
+  font-size: 0.92rem;
+}
+
+.payment-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.payment-option input {
+  width: 18px;
+  min-height: auto;
+  height: 18px;
+  accent-color: var(--accent-dark);
+}
+
+.payment-option span,
+.payment-option strong,
+.payment-option small {
+  display: block;
+}
+
+.payment-option span {
+  margin: 0;
+}
+
+.payment-option small {
+  margin-top: 4px;
+  color: var(--muted);
+}
+
+.payment-submit {
+  width: 100%;
+  margin-top: 20px;
+}
+
 .timeline {
   display: grid;
   gap: 12px;

@@ -8,6 +8,7 @@ Customer website for a bakkie and truck courier marketplace. LoadLink lets custo
 - Distance-based demo price calculation
 - Vehicle and load type selection
 - Customer confirmation flow
+- Dedicated payment method page before dispatch notification
 - Dedicated customer tracking page
 - Dispatcher notification and nearest-driver assignment simulation
 - Server-side quote calculation
@@ -41,6 +42,12 @@ Tracking is available at:
 
 ```text
 http://127.0.0.1:4173/tracking.html
+```
+
+Payment is available at:
+
+```text
+http://127.0.0.1:4173/payment.html
 ```
 
 ## Product direction

@@ -1,9 +1,10 @@
 const statusMap = {
-  dispatcher_notified: { label: "Dispatcher notified", className: "warning", timelineIndex: 0 },
-  driver_assigned: { label: "Driver assigned", className: "active", timelineIndex: 1 },
-  driver_en_route: { label: "Driver on the way", className: "active", timelineIndex: 2 },
-  goods_collected: { label: "Goods collected", className: "active", timelineIndex: 3 },
-  delivered: { label: "Delivered", className: "complete", timelineIndex: 4 }
+  awaiting_payment: { label: "Awaiting payment", className: "warning", timelineIndex: 0 },
+  dispatcher_notified: { label: "Dispatcher notified", className: "warning", timelineIndex: 1 },
+  driver_assigned: { label: "Driver assigned", className: "active", timelineIndex: 2 },
+  driver_en_route: { label: "Driver on the way", className: "active", timelineIndex: 3 },
+  goods_collected: { label: "Goods collected", className: "active", timelineIndex: 4 },
+  delivered: { label: "Delivered", className: "complete", timelineIndex: 5 }
 };
 
 async function apiRequest(path) {
@@ -29,7 +30,7 @@ function renderEmpty() {
 }
 
 function renderTimeline(status) {
-  const statusData = statusMap[status] || statusMap.dispatcher_notified;
+  const statusData = statusMap[status] || statusMap.awaiting_payment;
 
   document.querySelectorAll("#timeline li").forEach((item, index) => {
     item.classList.toggle("done", index < statusData.timelineIndex);

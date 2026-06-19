@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LoadLink | Payment</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="index.html" aria-label="LoadLink home">
+        <span class="brand-mark">LL</span>
+        <span>
+          <strong>LoadLink</strong>
+          <small>Payment</small>
+        </span>
+      </a>
+      <nav class="desktop-nav" aria-label="Main navigation">
+        <a href="index.html#book">Book</a>
+        <a href="tracking.html">Tracking</a>
+      </nav>
+      <a class="header-action" href="tracking.html">Track request</a>
+    </header>
+
+    <main class="tracking-page">
+      <section class="tracking-hero" aria-labelledby="payment-title">
+        <p class="eyebrow">Payment method</p>
+        <h1 id="payment-title">Pay before we send your request to dispatch.</h1>
+        <p id="paymentIntro">Choose a payment method. Once payment is confirmed, LoadLink will notify the dispatcher to find the nearest suitable driver.</p>
+      </section>
+
+      <section class="tracking-layout">
+        <section class="product-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="section-kicker">Choose method</p>
+              <h2>Payment options</h2>
+            </div>
+            <span class="status-pill neutral" id="paymentStatus">Awaiting payment</span>
+          </div>
+
+          <fieldset class="payment-options">
+            <legend>Payment method</legend>
+            <label class="payment-option">
+              <input type="radio" name="paymentMethod" value="card" checked>
+              <span>
+                <strong>Card payment</strong>
+                <small>Use debit or credit card.</small>
+              </span>
+            </label>
+            <label class="payment-option">
+              <input type="radio" name="paymentMethod" value="eft">
+              <span>
+                <strong>Instant EFT</strong>
+                <small>Pay from your bank account.</small>
+              </span>
+            </label>
+            <label class="payment-option">
+              <input type="radio" name="paymentMethod" value="wallet">
+              <span>
+                <strong>LoadLink wallet</strong>
+                <small>Use wallet balance when available.</small>
+              </span>
+            </label>
+          </fieldset>
+
+          <button class="primary-button payment-submit" type="button" id="payBtn">Pay and send to dispatcher</button>
+          <p class="fine-print">This is a mock payment for MVP testing. A real payment gateway will be connected before launch.</p>
+        </section>
+
+        <aside class="product-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="section-kicker">Request summary</p>
+              <h2>Amount due</h2>
+            </div>
+          </div>
+
+          <dl class="ops-summary">
+            <div>
+              <dt>Booking ID</dt>
+              <dd id="bookingId">Loading</dd>
+            </div>
+            <div>
+              <dt>Total price</dt>
+              <dd id="paymentAmount">R 0</dd>
+            </div>
+            <div>
+              <dt>Pickup</dt>
+              <dd id="pickupAddress">Loading</dd>
+            </div>
+            <div>
+              <dt>Drop-off</dt>
+              <dd id="dropoffAddress">Loading</dd>
+            </div>
+            <div>
+              <dt>Vehicle</dt>
+              <dd id="vehicleText">Loading</dd>
+            </div>
+          </dl>
+        </aside>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div>
+        <strong>LoadLink</strong>
+        <p>Payment must be confirmed before dispatch is notified.</p>
+      </div>
+      <a href="index.html#book">Edit request</a>
+    </footer>
+
+    <script src="payment.js"></script>
+  </body>
+</html>

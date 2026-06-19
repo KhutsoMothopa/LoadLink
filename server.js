@@ -40,7 +40,7 @@ const loadFees = {
   construction: { label: "Construction material", fee: 140 }
 };
 
-const allowedStatuses = ["dispatcher_notified", "driver_assigned", "driver_en_route", "goods_collected", "delivered"];
+const allowedStatuses = ["awaiting_payment", "dispatcher_notified", "driver_assigned", "driver_en_route", "goods_collected", "delivered"];
 
 const driverPool = [
   { id: "DRV-101", name: "Thabo M.", vehicleTypes: ["bakkie", "canopy"], lat: -26.116, lng: 28.058, rating: 4.9 },
@@ -259,7 +259,7 @@ function createBooking(input) {
 
   return {
     id: `LL-${Date.now().toString().slice(-6)}`,
-    status: "dispatcher_notified",
+    status: "awaiting_payment",
     customerName: String(input.customerName || "Customer").trim(),
     customerPhone: String(input.customerPhone || "Not provided").trim(),
     pickupDate: String(input.pickupDate || new Date().toISOString().slice(0, 10)),
@@ -276,15 +276,15 @@ function createBooking(input) {
       paidAt: null
     },
     dispatcher: {
-      notified: true,
+      notified: false,
       name: "LoadLink Dispatch Desk",
-      notifiedAt: now,
-      searchStartedAt: now
+      notifiedAt: null,
+      searchStartedAt: null
     },
     assignedDriver: null,
     createdAt: now,
     updatedAt: now,
-    statusHistory: [{ status: "dispatcher_notified", at: now, actor: "customer" }],
+    statusHistory: [{ status: "awaiting_payment", at: now, actor: "customer" }],
     ...quote
   };
 }
@@ -306,7 +306,10 @@ function pushStatus(booking, status, actor = "system") {
 function advanceBookingForCustomer(booking) {
   if (!booking || booking.status === "delivered") return booking;
 
-  const ageSeconds = (Date.now() - new Date(booking.createdAt).getTime()) / 1000;
+  if (booking.status === "awaiting_payment") return booking;
+
+  const dispatchStart = booking.dispatcher?.searchStartedAt || booking.createdAt;
+  const ageSeconds = (Date.now() - new Date(dispatchStart).getTime()) / 1000;
 
   if (ageSeconds >= 6 && booking.status === "dispatcher_notified") {
     booking.assignedDriver = booking.assignedDriver || nearestDriverFor(booking);
@@ -379,9 +382,16 @@ function markBookingPaid(id, input) {
     reference: `PAY-${Date.now().toString().slice(-7)}`,
     paidAt: now
   };
+  booking.dispatcher = {
+    notified: true,
+    name: "LoadLink Dispatch Desk",
+    notifiedAt: now,
+    searchStartedAt: now
+  };
   booking.updatedAt = now;
   booking.statusHistory = booking.statusHistory || [];
   booking.statusHistory.push({ status: "payment_received", at: now, actor: "customer" });
+  pushStatus(booking, "dispatcher_notified", "system");
   writeBookings(bookings);
 
   return booking;

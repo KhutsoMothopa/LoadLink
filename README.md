@@ -1,6 +1,6 @@
 # LoadLink Courier Website
 
-Prototype website for a courier e-hailing platform that connects customers who need a bakkie or truck with available owner-drivers.
+Prototype e-hailing website for bakkies and trucks. LoadLink connects customers who need courier or moving services with available owner-drivers.
 
 ## What is included
 

@@ -18,7 +18,7 @@
       <nav class="desktop-nav" aria-label="Main navigation">
         <a href="#book">Book</a>
         <a href="#payment">Payment</a>
-        <a href="#tracking">Tracking</a>
+        <a href="tracking.html">Tracking</a>
         <a href="#roadmap">Roadmap</a>
       </nav>
       <a class="header-action" href="#book">Request vehicle</a>
@@ -35,7 +35,7 @@
           </p>
           <div class="hero-actions">
             <a class="primary-button" href="#book">Create booking</a>
-            <a class="secondary-button" href="#tracking">Track delivery</a>
+            <a class="secondary-button" href="tracking.html">Track delivery</a>
           </div>
           <dl class="trust-strip">
             <div>
@@ -239,45 +239,8 @@
 
           <div class="button-stack">
             <button class="primary-button" type="button" id="payBtn" disabled>Pay securely</button>
+            <a class="secondary-dark-button" href="tracking.html">Open tracking page</a>
           </div>
-        </section>
-
-        <section class="product-panel" id="tracking" aria-labelledby="tracking-title">
-          <div class="panel-heading">
-            <div>
-              <p class="section-kicker">Customer tracking</p>
-              <h2 id="tracking-title">Follow your delivery</h2>
-            </div>
-            <span class="status-pill neutral" id="tripStatus">Draft</span>
-          </div>
-
-          <dl class="ops-summary">
-            <div>
-              <dt>Booking ID</dt>
-              <dd id="bookingId">Not confirmed</dd>
-            </div>
-            <div>
-              <dt>Dispatcher</dt>
-              <dd id="dispatchNotice">Waiting for request</dd>
-            </div>
-            <div>
-              <dt>Assigned driver</dt>
-              <dd id="assignedDriver">Not assigned yet</dd>
-            </div>
-            <div>
-              <dt>Scheduled pickup</dt>
-              <dd id="scheduledPickup">Today, 10:00</dd>
-            </div>
-          </dl>
-
-          <ol class="timeline" id="timeline">
-            <li class="current">Quote prepared</li>
-            <li>Request sent to dispatcher</li>
-            <li>Nearest driver assigned</li>
-            <li>Driver on the way</li>
-            <li>Goods collected</li>
-            <li>Delivery complete</li>
-          </ol>
         </section>
       </section>
 

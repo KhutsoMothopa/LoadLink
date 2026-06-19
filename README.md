@@ -9,7 +9,7 @@ Customer website for a bakkie and truck courier marketplace. LoadLink lets custo
 - Vehicle and load type selection
 - Customer confirmation flow
 - Customer payment flow
-- Customer delivery tracking
+- Dedicated customer tracking page
 - Dispatcher notification and nearest-driver assignment simulation
 - Server-side quote calculation
 - Address geocoding foundation with service-area fallback
@@ -38,7 +38,11 @@ Then open:
 http://127.0.0.1:4173
 ```
 
-You can also open `index.html` directly in your browser.
+Tracking is available at:
+
+```text
+http://127.0.0.1:4173/tracking.html
+```
 
 ## Product direction
 

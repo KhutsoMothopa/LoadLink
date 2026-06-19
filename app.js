@@ -1,46 +1,10 @@
 const statusMap = {
-  draft: {
-    customer: "Draft quote",
-    payment: "Not requested",
-    trip: "Draft",
-    className: "neutral",
-    timelineIndex: 0
-  },
-  dispatcher_notified: {
-    customer: "Request sent",
-    payment: "Payment due",
-    trip: "Dispatcher notified",
-    className: "warning",
-    timelineIndex: 1
-  },
-  driver_assigned: {
-    customer: "Driver accepted",
-    payment: "Payment due",
-    trip: "Driver assigned",
-    className: "active",
-    timelineIndex: 2
-  },
-  driver_en_route: {
-    customer: "Driver on the way",
-    payment: "Payment due",
-    trip: "Driver on the way",
-    className: "active",
-    timelineIndex: 3
-  },
-  goods_collected: {
-    customer: "Goods collected",
-    payment: "Payment due",
-    trip: "Goods collected",
-    className: "active",
-    timelineIndex: 4
-  },
-  delivered: {
-    customer: "Delivered",
-    payment: "Payment due",
-    trip: "Delivered",
-    className: "complete",
-    timelineIndex: 5
-  }
+  draft: { customer: "Draft quote", className: "neutral" },
+  dispatcher_notified: { customer: "Request sent", className: "warning" },
+  driver_assigned: { customer: "Driver accepted", className: "active" },
+  driver_en_route: { customer: "Driver on the way", className: "active" },
+  goods_collected: { customer: "Goods collected", className: "active" },
+  delivered: { customer: "Delivered", className: "complete" }
 };
 
 const form = document.querySelector("#bookingForm");
@@ -51,7 +15,6 @@ const payBtn = document.querySelector("#payBtn");
 let activeTrip = null;
 let draftQuote = null;
 let quoteRequestId = 0;
-let pollingId = null;
 
 const formatRand = (value) => `R ${Math.round(value).toLocaleString("en-ZA")}`;
 
@@ -64,7 +27,6 @@ async function apiRequest(path, options = {}) {
     headers: { "Content-Type": "application/json", ...(options.headers || {}) },
     ...options
   });
-
   const payload = await response.json();
 
   if (!response.ok) {
@@ -97,16 +59,6 @@ function setPill(element, label, className) {
   element.className = `status-pill ${className}`;
 }
 
-function paymentLabel(trip) {
-  if (!trip) return "Not requested";
-  return trip.payment?.status === "paid" ? "Paid" : "Payment due";
-}
-
-function paymentClass(trip) {
-  if (!trip) return "neutral";
-  return trip.payment?.status === "paid" ? "complete" : "warning";
-}
-
 function updateQuoteUi(quote) {
   document.querySelector("#quotePrice").textContent = formatRand(quote.price);
   document.querySelector("#paymentAmount").textContent = formatRand(quote.price);
@@ -124,34 +76,13 @@ function updateQuoteUi(quote) {
 function updateStatusUi(status) {
   const statusData = statusMap[status] || statusMap.draft;
   setPill(document.querySelector("#bookingStatus"), statusData.customer, statusData.className);
-  setPill(document.querySelector("#tripStatus"), statusData.trip, statusData.className);
-  setPill(document.querySelector("#paymentStatus"), paymentLabel(activeTrip), paymentClass(activeTrip));
   document.querySelector("#heroStatus").textContent = statusData.customer;
 
-  payBtn.disabled = !activeTrip || activeTrip.payment?.status === "paid";
-  payBtn.textContent = activeTrip?.payment?.status === "paid" ? "Payment received" : "Pay securely";
-
-  document.querySelectorAll("#timeline li").forEach((item, index) => {
-    item.classList.toggle("done", index < statusData.timelineIndex);
-    item.classList.toggle("current", index === statusData.timelineIndex);
-  });
-}
-
-function updateTrackingUi(trip, quote) {
-  const active = trip || {};
-  const dispatcher = active.dispatcher;
-  const driver = active.assignedDriver;
-
-  document.querySelector("#bookingId").textContent = active.id || "Not confirmed";
-  document.querySelector("#dispatchNotice").textContent = dispatcher?.notified
-    ? `${dispatcher.name} notified`
-    : "Waiting for request";
-  document.querySelector("#assignedDriver").textContent = driver
-    ? `${driver.name}, ${driver.vehicle}, ${driver.distanceToPickup} km away`
-    : "Not assigned yet";
-  document.querySelector("#scheduledPickup").textContent = `${active.pickupDate || form.pickupDate.value || todayIsoDate()}, ${active.pickupTime || form.pickupTime.value || "10:00"}`;
-  document.querySelector("#paymentReference").textContent = active.payment?.reference || "Pending";
-  document.querySelector("#paymentAmount").textContent = formatRand((trip || quote).price);
+  const paid = activeTrip?.payment?.status === "paid";
+  setPill(document.querySelector("#paymentStatus"), paid ? "Paid" : activeTrip ? "Payment due" : "Not requested", paid ? "complete" : activeTrip ? "warning" : "neutral");
+  document.querySelector("#paymentReference").textContent = activeTrip?.payment?.reference || "Pending";
+  payBtn.disabled = !activeTrip || paid;
+  payBtn.textContent = paid ? "Payment received" : "Pay securely";
 }
 
 function syncFormFromTrip(trip) {
@@ -174,25 +105,10 @@ function syncFormFromTrip(trip) {
 
 function render() {
   const quote = activeTrip || draftQuote;
-
   if (!quote) return;
 
   updateQuoteUi(quote);
-  updateTrackingUi(activeTrip, quote);
   updateStatusUi(activeTrip ? activeTrip.status : "draft");
-}
-
-function startPolling() {
-  if (pollingId) return;
-
-  pollingId = window.setInterval(loadCurrentBooking, 3000);
-}
-
-function stopPollingIfComplete() {
-  if (!activeTrip || activeTrip.status !== "delivered" || !pollingId) return;
-
-  window.clearInterval(pollingId);
-  pollingId = null;
 }
 
 async function refreshDraft() {
@@ -210,7 +126,7 @@ async function refreshDraft() {
     draftQuote = payload.quote;
     render();
   } catch (error) {
-    setPill(document.querySelector("#tripStatus"), "API offline", "warning");
+    setPill(document.querySelector("#bookingStatus"), "API offline", "warning");
   }
 }
 
@@ -223,11 +139,10 @@ async function loadCurrentBooking() {
       draftQuote = payload.booking;
       syncFormFromTrip(payload.booking);
       render();
-      stopPollingIfComplete();
       return;
     }
   } catch (error) {
-    setPill(document.querySelector("#tripStatus"), "API offline", "warning");
+    setPill(document.querySelector("#bookingStatus"), "API offline", "warning");
   }
 
   await refreshDraft();
@@ -246,10 +161,9 @@ async function confirmBooking() {
     activeTrip = payload.booking;
     draftQuote = payload.booking;
     render();
-    startPolling();
     document.querySelector("#payment").scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (error) {
-    setPill(document.querySelector("#tripStatus"), "Request failed", "warning");
+    setPill(document.querySelector("#bookingStatus"), "Request failed", "warning");
   } finally {
     confirmBtn.disabled = false;
     confirmBtn.textContent = "Submit request";
@@ -271,7 +185,7 @@ async function makePayment() {
     activeTrip = payload.booking;
     draftQuote = payload.booking;
     render();
-    document.querySelector("#tracking").scrollIntoView({ behavior: "smooth", block: "start" });
+    window.location.href = "tracking.html";
   } catch (error) {
     setPill(document.querySelector("#paymentStatus"), "Payment failed", "warning");
   }
@@ -281,15 +195,10 @@ async function resetDemo() {
   activeTrip = null;
   draftQuote = null;
 
-  if (pollingId) {
-    window.clearInterval(pollingId);
-    pollingId = null;
-  }
-
   try {
     await apiRequest("/api/bookings/current", { method: "DELETE" });
   } catch (error) {
-    setPill(document.querySelector("#tripStatus"), "Reset failed", "warning");
+    setPill(document.querySelector("#bookingStatus"), "Reset failed", "warning");
   }
 
   form.reset();

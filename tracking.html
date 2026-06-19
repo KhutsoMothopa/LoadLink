@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LoadLink | Track Delivery</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="index.html" aria-label="LoadLink home">
+        <span class="brand-mark">LL</span>
+        <span>
+          <strong>LoadLink</strong>
+          <small>Delivery tracking</small>
+        </span>
+      </a>
+      <nav class="desktop-nav" aria-label="Main navigation">
+        <a href="index.html#book">Book</a>
+        <a href="index.html#payment">Payment</a>
+        <a href="tracking.html">Tracking</a>
+        <a href="index.html#roadmap">Roadmap</a>
+      </nav>
+      <a class="header-action" href="index.html#book">New request</a>
+    </header>
+
+    <main class="tracking-page">
+      <section class="tracking-hero" aria-labelledby="tracking-title">
+        <p class="eyebrow">Customer tracking</p>
+        <h1 id="tracking-title">Track your LoadLink delivery</h1>
+        <p id="trackingIntro">Follow your request from dispatcher notification to delivery completion.</p>
+      </section>
+
+      <section class="tracking-layout">
+        <section class="product-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="section-kicker">Trip progress</p>
+              <h2>Current status</h2>
+            </div>
+            <span class="status-pill neutral" id="tripStatus">Loading</span>
+          </div>
+
+          <ol class="timeline" id="timeline">
+            <li class="current">Request sent to dispatcher</li>
+            <li>Nearest driver assigned</li>
+            <li>Driver on the way</li>
+            <li>Goods collected</li>
+            <li>Delivery complete</li>
+          </ol>
+        </section>
+
+        <aside class="product-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="section-kicker">Delivery details</p>
+              <h2>Request summary</h2>
+            </div>
+            <span class="status-pill neutral" id="paymentStatus">Payment</span>
+          </div>
+
+          <dl class="ops-summary">
+            <div>
+              <dt>Booking ID</dt>
+              <dd id="bookingId">Not available</dd>
+            </div>
+            <div>
+              <dt>Dispatcher</dt>
+              <dd id="dispatchNotice">Waiting for request</dd>
+            </div>
+            <div>
+              <dt>Assigned driver</dt>
+              <dd id="assignedDriver">Not assigned yet</dd>
+            </div>
+            <div>
+              <dt>Pickup</dt>
+              <dd id="pickupAddress">Not available</dd>
+            </div>
+            <div>
+              <dt>Drop-off</dt>
+              <dd id="dropoffAddress">Not available</dd>
+            </div>
+            <div>
+              <dt>Scheduled pickup</dt>
+              <dd id="scheduledPickup">Not available</dd>
+            </div>
+            <div>
+              <dt>Payment reference</dt>
+              <dd id="paymentReference">Pending</dd>
+            </div>
+          </dl>
+
+          <div class="button-stack">
+            <a class="primary-button" href="index.html#payment">Make payment</a>
+            <a class="secondary-dark-button" href="index.html#book">Create new request</a>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div>
+        <strong>LoadLink</strong>
+        <p>Customer delivery tracking for courier requests.</p>
+      </div>
+      <a href="index.html#book">Create another booking</a>
+    </footer>
+
+    <script src="tracking.js"></script>
+  </body>
+</html>

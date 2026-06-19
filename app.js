@@ -10,7 +10,6 @@ const statusMap = {
 const form = document.querySelector("#bookingForm");
 const confirmBtn = document.querySelector("#confirmBtn");
 const resetBtn = document.querySelector("#resetBtn");
-const payBtn = document.querySelector("#payBtn");
 
 let activeTrip = null;
 let draftQuote = null;
@@ -61,7 +60,6 @@ function setPill(element, label, className) {
 
 function updateQuoteUi(quote) {
   document.querySelector("#quotePrice").textContent = formatRand(quote.price);
-  document.querySelector("#paymentAmount").textContent = formatRand(quote.price);
   document.querySelector("#pickupLabel").textContent = quote.pickup.address || quote.pickup.label;
   document.querySelector("#dropoffLabel").textContent = quote.dropoff.address || quote.dropoff.label;
   document.querySelector("#distanceText").textContent = `${quote.distance.toFixed(1)} km`;
@@ -77,12 +75,6 @@ function updateStatusUi(status) {
   const statusData = statusMap[status] || statusMap.draft;
   setPill(document.querySelector("#bookingStatus"), statusData.customer, statusData.className);
   document.querySelector("#heroStatus").textContent = statusData.customer;
-
-  const paid = activeTrip?.payment?.status === "paid";
-  setPill(document.querySelector("#paymentStatus"), paid ? "Paid" : activeTrip ? "Payment due" : "Not requested", paid ? "complete" : activeTrip ? "warning" : "neutral");
-  document.querySelector("#paymentReference").textContent = activeTrip?.payment?.reference || "Pending";
-  payBtn.disabled = !activeTrip || paid;
-  payBtn.textContent = paid ? "Payment received" : "Pay securely";
 }
 
 function syncFormFromTrip(trip) {
@@ -161,33 +153,12 @@ async function confirmBooking() {
     activeTrip = payload.booking;
     draftQuote = payload.booking;
     render();
-    document.querySelector("#payment").scrollIntoView({ behavior: "smooth", block: "start" });
+    window.location.href = "tracking.html";
   } catch (error) {
     setPill(document.querySelector("#bookingStatus"), "Request failed", "warning");
   } finally {
     confirmBtn.disabled = false;
     confirmBtn.textContent = "Submit request";
-  }
-}
-
-async function makePayment() {
-  if (!activeTrip) return;
-
-  payBtn.disabled = true;
-  payBtn.textContent = "Processing...";
-
-  try {
-    const payload = await apiRequest(`/api/bookings/${activeTrip.id}/payment`, {
-      method: "POST",
-      body: JSON.stringify({ method: "card" })
-    });
-
-    activeTrip = payload.booking;
-    draftQuote = payload.booking;
-    render();
-    window.location.href = "tracking.html";
-  } catch (error) {
-    setPill(document.querySelector("#paymentStatus"), "Payment failed", "warning");
   }
 }
 
@@ -215,7 +186,6 @@ async function resetDemo() {
 form.addEventListener("change", refreshDraft);
 form.addEventListener("input", refreshDraft);
 confirmBtn.addEventListener("click", confirmBooking);
-payBtn.addEventListener("click", makePayment);
 resetBtn.addEventListener("click", resetDemo);
 
 confirmBtn.textContent = "Submit request";

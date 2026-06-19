@@ -8,7 +8,6 @@ Customer website for a bakkie and truck courier marketplace. LoadLink lets custo
 - Distance-based demo price calculation
 - Vehicle and load type selection
 - Customer confirmation flow
-- Customer payment flow
 - Dedicated customer tracking page
 - Dispatcher notification and nearest-driver assignment simulation
 - Server-side quote calculation
@@ -46,7 +45,7 @@ http://127.0.0.1:4173/tracking.html
 
 ## Product direction
 
-The next milestone should connect the geocoding foundation to a real mapping provider and payment gateway. Driver tools and dispatcher tools should be built as separate products from this customer website.
+The next milestone should connect the geocoding foundation to a real mapping provider. Driver tools, dispatcher tools, and payment handling should be built as separate product areas from this customer booking website.
 
 ## Current API routes
 

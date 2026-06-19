@@ -326,6 +326,13 @@ button {
   gap: 18px;
 }
 
+.form-help {
+  margin: 14px 0 0;
+  color: #64748b;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
 label span,
 .option-row legend {
   display: block;

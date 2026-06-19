@@ -11,6 +11,7 @@ MVP website for a bakkie and truck courier marketplace. LoadLink connects custom
 - Driver trip acceptance and status flow
 - Operations trip monitor
 - Server-side quote calculation
+- Address geocoding foundation with service-area fallback
 - Booking API with lightweight JSON persistence
 - Formal, professional visual style
 
@@ -40,11 +41,13 @@ You can also open `index.html` directly in your browser.
 
 ## Product direction
 
-The next milestone should connect the estimate form to a real mapping/geocoding service, then add customer accounts, driver accounts, payment handling, live driver notifications, and a driver mobile app.
+The next milestone should connect the geocoding foundation to a real mapping provider, then add customer accounts, driver accounts, payment handling, live driver notifications, and a driver mobile app.
 
 ## Current API routes
 
 - `GET /api/health`
+- `GET /api/locations`
+- `POST /api/geocode`
 - `POST /api/quote`
 - `POST /api/bookings`
 - `GET /api/bookings/current`

@@ -75,7 +75,15 @@
                 <input id="customerPhone" name="customerPhone" type="tel" value="+27 72 000 0000" autocomplete="tel">
               </label>
               <label>
-                <span>Pickup location</span>
+                <span>Pickup address</span>
+                <input id="pickupAddress" name="pickupAddress" type="text" list="addressSuggestions" value="Sandton City, 83 Rivonia Road, Sandton" autocomplete="street-address">
+              </label>
+              <label>
+                <span>Drop-off address</span>
+                <input id="dropoffAddress" name="dropoffAddress" type="text" list="addressSuggestions" value="Rosebank Mall, 15A Cradock Avenue, Rosebank" autocomplete="street-address">
+              </label>
+              <label>
+                <span>Pickup service area</span>
                 <select id="pickup" name="pickup">
                   <option value="sandton">Sandton</option>
                   <option value="rosebank">Rosebank</option>
@@ -86,7 +94,7 @@
                 </select>
               </label>
               <label>
-                <span>Drop-off destination</span>
+                <span>Drop-off service area</span>
                 <select id="dropoff" name="dropoff">
                   <option value="rosebank">Rosebank</option>
                   <option value="sandton">Sandton</option>
@@ -96,6 +104,14 @@
                   <option value="pretoria">Pretoria CBD</option>
                 </select>
               </label>
+              <datalist id="addressSuggestions">
+                <option value="Sandton City, 83 Rivonia Road, Sandton"></option>
+                <option value="Rosebank Mall, 15A Cradock Avenue, Rosebank"></option>
+                <option value="Mall of Africa, Magwa Crescent, Midrand"></option>
+                <option value="Maponya Mall, Chris Hani Road, Soweto"></option>
+                <option value="Centurion Mall, Heuwel Road, Centurion"></option>
+                <option value="Church Square, Pretoria Central"></option>
+              </datalist>
               <label>
                 <span>What are you moving?</span>
                 <select id="loadType" name="loadType">
@@ -124,6 +140,7 @@
                 <input id="pickupTime" name="pickupTime" type="time" value="10:00">
               </label>
             </div>
+            <p class="form-help">Service areas are used as a fallback when an address cannot be matched yet. Production will connect this to a live geocoding provider.</p>
 
             <fieldset class="option-row">
               <legend>Handling requirements</legend>
@@ -189,6 +206,10 @@
               <dt>ETA to pickup</dt>
               <dd id="etaText">8 min</dd>
             </div>
+            <div>
+              <dt>Route source</dt>
+              <dd id="routeSource">Address matched</dd>
+            </div>
           </dl>
           <p class="fine-print">Demo pricing includes base fare, distance, vehicle size, handling requirements, and platform margin.</p>
         </aside>
@@ -208,7 +229,7 @@
             <div class="driver-avatar">TM</div>
             <div>
               <h3>Thabo M.</h3>
-              <p id="driverMeta">Verified bakkie driver · 4.9 rating · 2.1 km away</p>
+              <p id="driverMeta">Verified bakkie driver - 4.9 rating - 2.1 km away</p>
             </div>
           </div>
 

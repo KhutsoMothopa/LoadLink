@@ -8,13 +8,22 @@ const dataDir = path.join(root, "data");
 const bookingsFile = path.join(dataDir, "bookings.json");
 
 const locations = {
-  sandton: { label: "Sandton", lat: -26.1076, lng: 28.0567 },
-  rosebank: { label: "Rosebank", lat: -26.1466, lng: 28.0416 },
-  midrand: { label: "Midrand", lat: -25.9992, lng: 28.1263 },
-  soweto: { label: "Soweto", lat: -26.2485, lng: 27.8540 },
-  centurion: { label: "Centurion", lat: -25.8603, lng: 28.1894 },
-  pretoria: { label: "Pretoria CBD", lat: -25.7479, lng: 28.2293 }
+  sandton: { label: "Sandton", address: "Sandton City, 83 Rivonia Road, Sandton", lat: -26.1076, lng: 28.0567 },
+  rosebank: { label: "Rosebank", address: "Rosebank Mall, 15A Cradock Avenue, Rosebank", lat: -26.1466, lng: 28.0416 },
+  midrand: { label: "Midrand", address: "Mall of Africa, Magwa Crescent, Midrand", lat: -25.9992, lng: 28.1263 },
+  soweto: { label: "Soweto", address: "Maponya Mall, Chris Hani Road, Soweto", lat: -26.2485, lng: 27.8540 },
+  centurion: { label: "Centurion", address: "Centurion Mall, Heuwel Road, Centurion", lat: -25.8603, lng: 28.1894 },
+  pretoria: { label: "Pretoria CBD", address: "Church Square, Pretoria Central", lat: -25.7479, lng: 28.2293 }
 };
+
+const addressBook = [
+  { key: "sandton", aliases: ["sandton city", "rivonia road", "sandton"] },
+  { key: "rosebank", aliases: ["rosebank mall", "cradock avenue", "rosebank"] },
+  { key: "midrand", aliases: ["mall of africa", "magwa crescent", "midrand"] },
+  { key: "soweto", aliases: ["maponya mall", "chris hani", "soweto"] },
+  { key: "centurion", aliases: ["centurion mall", "heuwel road", "centurion"] },
+  { key: "pretoria", aliases: ["church square", "pretoria central", "pretoria cbd", "pretoria"] }
+];
 
 const vehicleRates = {
   bakkie: { label: "Bakkie", base: 280, perKm: 15, eta: 7 },
@@ -115,6 +124,64 @@ function distanceKm(start, end) {
   return Math.max(3.5, earthRadius * c * 1.18);
 }
 
+function normalizeText(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function parseCoordinates(value) {
+  const match = String(value || "").match(/^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/);
+  if (!match) return null;
+
+  const lat = Number(match[1]);
+  const lng = Number(match[2]);
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  if (lat < -35 || lat > -20 || lng < 16 || lng > 34) return null;
+
+  return { lat, lng };
+}
+
+function geocodeAddress(address, fallbackKey) {
+  const cleanAddress = String(address || "").trim();
+  const normalized = normalizeText(cleanAddress);
+  const fallback = locations[fallbackKey] || locations.sandton;
+  const coordinateInput = parseCoordinates(cleanAddress);
+
+  if (coordinateInput) {
+    return {
+      label: cleanAddress,
+      address: cleanAddress,
+      lat: coordinateInput.lat,
+      lng: coordinateInput.lng,
+      source: "coordinates",
+      confidence: "exact"
+    };
+  }
+
+  if (normalized) {
+    const match = addressBook.find((entry) =>
+      entry.aliases.some((alias) => normalized.includes(alias) || alias.includes(normalized))
+    );
+
+    if (match) {
+      const location = locations[match.key];
+      return {
+        ...location,
+        address: cleanAddress || location.address,
+        source: "local-address-book",
+        confidence: "matched"
+      };
+    }
+  }
+
+  return {
+    ...fallback,
+    address: cleanAddress || fallback.address,
+    source: "service-area-fallback",
+    confidence: cleanAddress ? "estimated" : "area-only"
+  };
+}
+
 function validateSelection(input) {
   const pickupKey = input.pickupKey || input.pickup || "sandton";
   const dropoffKey = input.dropoffKey || input.dropoff || "rosebank";
@@ -131,8 +198,8 @@ function validateSelection(input) {
 
 function calculateQuote(input) {
   const keys = validateSelection(input);
-  const pickup = locations[keys.pickupKey];
-  const dropoff = locations[keys.dropoffKey];
+  const pickup = geocodeAddress(input.pickupAddress, keys.pickupKey);
+  const dropoff = geocodeAddress(input.dropoffAddress, keys.dropoffKey);
   const vehicle = vehicleRates[keys.vehicleKey];
   const load = loadFees[keys.loadTypeKey];
   const helpersFee = input.helpers ? 170 : 0;
@@ -154,6 +221,7 @@ function calculateQuote(input) {
     price,
     driverPayout,
     platformMargin,
+    routeSource: pickup.confidence === "estimated" || dropoff.confidence === "estimated" ? "Estimated from service area" : "Address matched",
     eta: vehicle.eta + Math.round(distance / 8)
   };
 }
@@ -169,6 +237,8 @@ function createBooking(input) {
     customerPhone: String(input.customerPhone || "Not provided").trim(),
     pickupDate: String(input.pickupDate || new Date().toISOString().slice(0, 10)),
     pickupTime: String(input.pickupTime || "10:00"),
+    pickupAddress: String(input.pickupAddress || quote.pickup.address).trim(),
+    dropoffAddress: String(input.dropoffAddress || quote.dropoff.address).trim(),
     helpers: Boolean(input.helpers),
     stairs: Boolean(input.stairs),
     notes: String(input.notes || "").trim(),
@@ -222,7 +292,17 @@ async function handleApi(request, response, pathname) {
     }
 
     if (request.method === "GET" && pathname === "/api/locations") {
-      sendJson(response, 200, { locations, vehicleRates, loadFees });
+      sendJson(response, 200, { locations, addressBook, vehicleRates, loadFees });
+      return;
+    }
+
+    if (request.method === "POST" && pathname === "/api/geocode") {
+      const body = await readJsonBody(request);
+      const keys = validateSelection(body);
+      sendJson(response, 200, {
+        pickup: geocodeAddress(body.pickupAddress, keys.pickupKey),
+        dropoff: geocodeAddress(body.dropoffAddress, keys.dropoffKey)
+      });
       return;
     }
 

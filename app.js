@@ -72,6 +72,8 @@ function formPayload() {
   return {
     customerName: form.customerName.value.trim(),
     customerPhone: form.customerPhone.value.trim(),
+    pickupAddress: form.pickupAddress.value.trim(),
+    dropoffAddress: form.dropoffAddress.value.trim(),
     pickupKey: form.pickup.value,
     dropoffKey: form.dropoff.value,
     loadTypeKey: form.loadType.value,
@@ -95,12 +97,13 @@ function updateQuoteUi(quote) {
   document.querySelector("#driverEarns").textContent = formatRand(quote.driverPayout);
   document.querySelector("#driverPayout").textContent = formatRand(quote.driverPayout);
   document.querySelector("#platformMargin").textContent = formatRand(quote.platformMargin);
-  document.querySelector("#pickupLabel").textContent = quote.pickup.label;
-  document.querySelector("#dropoffLabel").textContent = quote.dropoff.label;
+  document.querySelector("#pickupLabel").textContent = quote.pickup.address || quote.pickup.label;
+  document.querySelector("#dropoffLabel").textContent = quote.dropoff.address || quote.dropoff.label;
   document.querySelector("#distanceText").textContent = `${quote.distance.toFixed(1)} km`;
   document.querySelector("#vehicleText").textContent = quote.vehicle.label;
   document.querySelector("#loadText").textContent = quote.load.label;
   document.querySelector("#etaText").textContent = `${quote.eta} min`;
+  document.querySelector("#routeSource").textContent = quote.routeSource || "Address matched";
   document.querySelector("#driverRoute").textContent = `${quote.pickup.label} to ${quote.dropoff.label}`;
   document.querySelector("#driverMeta").textContent = `${quote.vehicle.label} driver - 4.9 rating - ${Math.max(1.2, quote.distance / 4).toFixed(1)} km away`;
   document.querySelector("#heroFare").textContent = formatRand(quote.price);
@@ -137,6 +140,8 @@ function syncFormFromTrip(trip) {
 
   form.customerName.value = trip.customerName || "";
   form.customerPhone.value = trip.customerPhone || "";
+  form.pickupAddress.value = trip.pickupAddress || trip.pickup?.address || "";
+  form.dropoffAddress.value = trip.dropoffAddress || trip.dropoff?.address || "";
   form.pickup.value = trip.pickupKey || "sandton";
   form.dropoff.value = trip.dropoffKey || "rosebank";
   form.loadType.value = trip.loadTypeKey || "bed";
@@ -247,6 +252,8 @@ async function resetDemo() {
   form.reset();
   form.customerName.value = "Khutso Mothopa";
   form.customerPhone.value = "+27 72 000 0000";
+  form.pickupAddress.value = "Sandton City, 83 Rivonia Road, Sandton";
+  form.dropoffAddress.value = "Rosebank Mall, 15A Cradock Avenue, Rosebank";
   form.pickupDate.value = todayIsoDate();
   form.pickupTime.value = "10:00";
   document.querySelector("#loadNotes").value = "Moving one queen bed and base. Customer will meet driver at reception.";

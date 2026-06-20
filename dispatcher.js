@@ -1,6 +1,8 @@
 const dispatcherRequestList = document.querySelector("#dispatcherRequestList");
 const dispatcherDriverList = document.querySelector("#dispatcherDriverList");
 const refreshDispatchBtn = document.querySelector("#refreshDispatchBtn");
+let isLoadingDispatcher = false;
+let isAssigningRequest = false;
 
 const statusLabels = {
   dispatcher_notified: "Ready for assignment",
@@ -154,8 +156,25 @@ function renderDrivers(drivers) {
 }
 
 async function loadDispatcher() {
-  setStatus("#dispatcherQueueStatus", "Loading", "neutral");
-  setStatus("#dispatcherDriverStatus", "Loading", "neutral");
+  if (isLoadingDispatcher || isAssigningRequest) return;
+
+  isLoadingDispatcher = true;
+  refreshDispatchBtn.disabled = true;
+
+  const cachedRequests = window.LoadLinkOps?.paidRequests() || [];
+  const cachedDrivers = window.LoadLinkOps?.getDrivers() || [];
+
+  if (cachedRequests.length) {
+    renderRequests(cachedRequests);
+  } else {
+    setStatus("#dispatcherQueueStatus", "Loading", "neutral");
+  }
+
+  if (cachedDrivers.length) {
+    renderDrivers(cachedDrivers);
+  } else {
+    setStatus("#dispatcherDriverStatus", "Loading", "neutral");
+  }
 
   try {
     const [requestsPayload, driversPayload] = await Promise.all([
@@ -163,28 +182,70 @@ async function loadDispatcher() {
       apiRequest("/api/dispatcher/drivers")
     ]);
 
-    renderRequests(requestsPayload.requests);
-    renderDrivers(driversPayload.drivers);
+    const requests = window.LoadLinkOps
+      ? window.LoadLinkOps.paidRequests(requestsPayload.requests)
+      : requestsPayload.requests;
+    const drivers = window.LoadLinkOps
+      ? window.LoadLinkOps.getDrivers(driversPayload.drivers)
+      : driversPayload.drivers;
+
+    renderRequests(requests);
+    renderDrivers(drivers);
   } catch (error) {
-    setStatus("#dispatcherQueueStatus", "Dispatch API unavailable", "warning");
-    setStatus("#dispatcherDriverStatus", "Driver list unavailable", "warning");
+    const requests = window.LoadLinkOps?.paidRequests() || [];
+    const drivers = window.LoadLinkOps?.getDrivers() || [];
+
+    if (requests.length) {
+      renderRequests(requests);
+      setStatus("#dispatcherQueueStatus", "Saved queue", "warning");
+    } else {
+      setStatus("#dispatcherQueueStatus", "Dispatch API unavailable", "warning");
+    }
+
+    if (drivers.length) {
+      renderDrivers(drivers);
+    } else {
+      setStatus("#dispatcherDriverStatus", "Driver list unavailable", "warning");
+    }
+  } finally {
+    isLoadingDispatcher = false;
+    refreshDispatchBtn.disabled = false;
   }
 }
 
 async function assignRequest(requestId) {
   const select = document.querySelector(`[data-driver-select="${requestId}"]`);
   const driverId = select?.value || null;
+  const button = document.querySelector(`[data-action="assign"][data-request="${requestId}"]`);
 
+  isAssigningRequest = true;
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Assigning...";
+  }
   setStatus("#dispatcherQueueStatus", "Assigning", "warning");
 
   try {
-    await apiRequest(`/api/dispatcher/requests/${requestId}/assign`, {
+    const payload = await apiRequest(`/api/dispatcher/requests/${requestId}/assign`, {
       method: "POST",
       body: JSON.stringify({ driverId })
     });
-    await loadDispatcher();
+
+    window.LoadLinkOps?.saveBooking(payload.booking);
+    renderRequests(window.LoadLinkOps?.paidRequests() || [payload.booking]);
+    setStatus("#dispatcherQueueStatus", "Assigned", "active");
   } catch (error) {
-    setStatus("#dispatcherQueueStatus", "Assignment failed", "warning");
+    try {
+      const booking = window.LoadLinkOps?.assignBooking(requestId, driverId);
+      renderRequests(window.LoadLinkOps?.paidRequests() || [booking]);
+      setStatus("#dispatcherQueueStatus", "Assigned from saved queue", "active");
+    } catch (localError) {
+      setStatus("#dispatcherQueueStatus", "Assignment failed", "warning");
+      if (button) button.disabled = false;
+    }
+  } finally {
+    isAssigningRequest = false;
+    if (button) button.textContent = "Assign selected driver";
   }
 }
 
@@ -197,4 +258,3 @@ dispatcherRequestList.addEventListener("click", (event) => {
 
 refreshDispatchBtn.addEventListener("click", loadDispatcher);
 loadDispatcher();
-window.setInterval(loadDispatcher, 7000);

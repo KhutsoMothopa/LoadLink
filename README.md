@@ -132,6 +132,10 @@ The next milestone should connect the geocoding foundation to a real mapping pro
 - `GET /api/dispatcher/drivers`
 - `POST /api/dispatcher/requests/:id/assign`
 
+## Live dispatch state
+
+The live Vercel deployment keeps API-backed data when available and mirrors the current browser's operational state in local storage for continuity across customer payment, dispatcher assignment, driver response, and tracking. The next production step is to replace temporary JSON and browser continuity storage with a durable database so separate customers, dispatchers, and drivers share the same records in real time.
+
 ## Internal foundation routes
 
 These are backend foundations for future dispatcher and driver products, not visible customer website tools.

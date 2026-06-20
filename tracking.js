@@ -32,6 +32,7 @@ function storedBooking() {
 function saveActiveBooking(booking) {
   if (!booking) return;
   window.sessionStorage.setItem(activeBookingKey, JSON.stringify(booking));
+  window.LoadLinkOps?.saveBooking(booking);
 }
 
 function setPill(element, label, className) {
@@ -79,9 +80,12 @@ function renderBooking(booking) {
 
 async function refreshTracking() {
   const fallbackBooking = storedBooking();
+  const operationalBooking = window.LoadLinkOps
+    ?.mergeBookings()
+    .find((booking) => booking.id === fallbackBooking?.id);
 
-  if (fallbackBooking) {
-    renderBooking(fallbackBooking);
+  if (operationalBooking || fallbackBooking) {
+    renderBooking(operationalBooking || fallbackBooking);
   }
 
   try {

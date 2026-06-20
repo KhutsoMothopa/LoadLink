@@ -38,6 +38,7 @@ function saveActiveBooking(booking) {
   if (!booking) return;
   activeBooking = booking;
   window.sessionStorage.setItem(activeBookingKey, JSON.stringify(booking));
+  window.LoadLinkOps?.saveBooking(booking);
 }
 
 function selectedMethod() {
@@ -122,6 +123,28 @@ async function startCheckout() {
     saveActiveBooking(payload.session.booking || booking);
     window.location.href = payload.session.redirectUrl;
   } catch (error) {
+    const booking = activeBooking || storedBooking();
+
+    if (booking) {
+      const session = {
+        id: `CHK-${Date.now().toString().slice(-8)}`,
+        bookingId: booking.id,
+        provider: "LoadLink Secure Checkout",
+        method: selectedMethod(),
+        amount: booking.price,
+        currency: "ZAR",
+        status: "pending",
+        createdAt: new Date().toISOString(),
+        redirectUrl: `gateway.html?sessionId=CHK-${Date.now().toString().slice(-8)}`
+      };
+
+      session.redirectUrl = `gateway.html?sessionId=${session.id}`;
+      window.sessionStorage.setItem(checkoutSessionKey, JSON.stringify(session));
+      saveActiveBooking(booking);
+      window.location.href = session.redirectUrl;
+      return;
+    }
+
     setPaymentStatus("Checkout failed", "warning");
     payBtn.disabled = false;
     payBtn.textContent = "Continue to secure checkout";

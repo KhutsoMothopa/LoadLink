@@ -138,13 +138,27 @@ function renderJobs(jobs) {
 }
 
 async function loadJobs() {
-  setQueueStatus("Loading", "neutral");
+  const cachedJobs = window.LoadLinkOps?.driverJobs() || [];
+
+  if (cachedJobs.length) {
+    renderJobs(cachedJobs);
+  } else {
+    setQueueStatus("Loading", "neutral");
+  }
 
   try {
     const payload = await apiRequest("/api/driver/jobs");
-    renderJobs(payload.jobs);
+    const jobs = window.LoadLinkOps
+      ? window.LoadLinkOps.driverJobs(payload.jobs)
+      : payload.jobs;
+
+    renderJobs(jobs);
   } catch (error) {
-    setQueueStatus("Driver API offline", "warning");
+    if (cachedJobs.length) {
+      setQueueStatus("Saved jobs", "warning");
+    } else {
+      setQueueStatus("Driver API offline", "warning");
+    }
   }
 }
 
@@ -153,10 +167,18 @@ async function loadProfile() {
 
   try {
     const payload = await apiRequest("/api/driver/profile");
-    renderProfile(payload.profile, payload.locations);
+    const profile = window.LoadLinkOps?.saveDriverProfile(payload.profile) || payload.profile;
+    renderProfile(profile, payload.locations);
   } catch (error) {
-    setAvailabilityStatus("Offline", "warning");
-    locationMeta.textContent = "Driver profile could not be loaded.";
+    const profile = window.LoadLinkOps?.getDrivers().find((driver) => driver.id === window.LoadLinkOps.activeDriverId);
+
+    if (profile) {
+      renderProfile(profile, window.LoadLinkOps.locations);
+      setAvailabilityStatus("Saved profile", "warning");
+    } else {
+      setAvailabilityStatus("Offline", "warning");
+      locationMeta.textContent = "Driver profile could not be loaded.";
+    }
   }
 }
 
@@ -173,14 +195,30 @@ async function saveProfile() {
       })
     });
 
-    renderProfile(payload.profile, Object.fromEntries([...locationSelect.options].map((option) => [
+    const profile = window.LoadLinkOps?.saveDriverProfile(payload.profile) || payload.profile;
+    renderProfile(profile, Object.fromEntries([...locationSelect.options].map((option) => [
       option.value,
       { label: option.textContent }
     ])));
     await loadJobs();
   } catch (error) {
-    setAvailabilityStatus("Save failed", "warning");
-    locationMeta.textContent = error.message;
+    const locationLabel = locationSelect.options[locationSelect.selectedIndex]?.textContent || "Selected area";
+    const profile = window.LoadLinkOps?.saveDriverProfile({
+      id: window.LoadLinkOps.activeDriverId,
+      available: availableToggle.checked,
+      currentLocationKey: locationSelect.value,
+      currentLocationLabel: locationLabel,
+      updatedAt: new Date().toISOString()
+    });
+
+    if (profile) {
+      renderProfile(profile, window.LoadLinkOps.locations);
+      setAvailabilityStatus("Saved locally", "warning");
+      await loadJobs();
+    } else {
+      setAvailabilityStatus("Save failed", "warning");
+      locationMeta.textContent = error.message;
+    }
   } finally {
     saveAvailabilityBtn.disabled = false;
   }
@@ -191,11 +229,24 @@ async function loadEarnings() {
 
   try {
     const payload = await apiRequest(`/api/driver/earnings?period=${earningsPeriod.value}`);
-    completedJobs.textContent = payload.earnings.completedJobs.toLocaleString("en-ZA");
-    totalEarned.textContent = formatRand(payload.earnings.totalEarned);
-    earningsStatus.textContent = `Showing delivered jobs from ${new Date(payload.earnings.periodStart).toLocaleDateString("en-ZA")}.`;
+    const localEarnings = window.LoadLinkOps?.earnings(earningsPeriod.value);
+    const earnings = localEarnings && localEarnings.completedJobs > payload.earnings.completedJobs
+      ? localEarnings
+      : payload.earnings;
+
+    completedJobs.textContent = earnings.completedJobs.toLocaleString("en-ZA");
+    totalEarned.textContent = formatRand(earnings.totalEarned);
+    earningsStatus.textContent = `Showing delivered jobs from ${new Date(earnings.periodStart).toLocaleDateString("en-ZA")}.`;
   } catch (error) {
-    earningsStatus.textContent = "Earnings could not be loaded.";
+    const earnings = window.LoadLinkOps?.earnings(earningsPeriod.value);
+
+    if (earnings) {
+      completedJobs.textContent = earnings.completedJobs.toLocaleString("en-ZA");
+      totalEarned.textContent = formatRand(earnings.totalEarned);
+      earningsStatus.textContent = `Showing saved delivered jobs from ${new Date(earnings.periodStart).toLocaleDateString("en-ZA")}.`;
+    } else {
+      earningsStatus.textContent = "Earnings could not be loaded.";
+    }
   }
 }
 
@@ -210,7 +261,14 @@ async function respondToJob(jobId, action) {
     await loadJobs();
     await loadEarnings();
   } catch (error) {
-    setQueueStatus("Update failed", "warning");
+    try {
+      window.LoadLinkOps?.respondToJob(jobId, action);
+      renderJobs(window.LoadLinkOps?.driverJobs() || []);
+      await loadEarnings();
+      setQueueStatus("Saved update", "warning");
+    } catch (localError) {
+      setQueueStatus("Update failed", "warning");
+    }
   }
 }
 
@@ -230,4 +288,4 @@ saveAvailabilityBtn.addEventListener("click", saveProfile);
 earningsPeriod.addEventListener("change", loadEarnings);
 
 refreshDashboard();
-window.setInterval(loadJobs, 5000);
+window.setInterval(loadJobs, 30000);

@@ -76,7 +76,7 @@ https://www.load-link.co.za/tracking
 https://www.load-link.co.za/payment
 ```
 
-Vercel serves the backend through the catch-all serverless function in `api/[...path].js`, so routes such as `/api/quote` and `/api/driver/jobs` are available in production. For long-term reliability, booking, payment, driver, and dispatch records should be moved to a managed database.
+Vercel serves the backend through the single serverless API gateway in `api/index.js`, so routes such as `/api/quote` and `/api/driver/jobs` are available in production without exceeding the Hobby plan function limit. For long-term reliability, booking, payment, driver, and dispatch records should be moved to a managed database.
 
 ## Dispatcher email
 

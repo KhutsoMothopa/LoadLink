@@ -1234,5 +1234,6 @@ if (require.main === module) {
 }
 
 module.exports = {
+  handleApi,
   handleRequest
 };

@@ -130,6 +130,8 @@ SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_ANON_KEY=your-public-anon-key
 ```
 
+Replace the examples with the real values from Supabase. Do not leave `https://your-project.supabase.co` in Vercel, because the login page will not be able to reach Supabase.
+
 Account routes:
 
 ```text

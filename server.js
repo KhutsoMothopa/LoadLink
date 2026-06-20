@@ -16,8 +16,8 @@ const activeDriverId = process.env.LOADLINK_DRIVER_ID || "DRV-101";
 const dispatcherEmail = process.env.DISPATCHER_EMAIL || "clementmothopa@gmail.com";
 const dispatchFromEmail = process.env.DISPATCH_FROM_EMAIL || "dispatch@loadlink.co.za";
 const dispatchFromName = process.env.DISPATCH_FROM_NAME || "LoadLink Dispatch";
-const supabaseUrl = process.env.SUPABASE_URL || "";
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || "";
+const supabaseUrl = cleanEnvValue(process.env.SUPABASE_URL);
+const supabaseAnonKey = cleanEnvValue(process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_PUBLISHABLE_KEY);
 
 const locations = {
   sandton: { label: "Sandton", address: "Sandton City, 83 Rivonia Road, Sandton", lat: -26.1076, lng: 28.0567 },
@@ -75,6 +75,26 @@ const contentTypes = {
   ".js": "text/javascript; charset=utf-8",
   ".json": "application/json; charset=utf-8"
 };
+
+function cleanEnvValue(value) {
+  return String(value || "").trim().replace(/^["']|["']$/g, "");
+}
+
+function supabaseSetupIssue() {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return "Missing Supabase URL or public key.";
+  }
+
+  if (supabaseUrl.includes("your-project") || !/^https:\/\/[a-zA-Z0-9-]+\.supabase\.co$/.test(supabaseUrl)) {
+    return "SUPABASE_URL must be your real Supabase project URL.";
+  }
+
+  if (supabaseAnonKey.includes("your-") || supabaseAnonKey.length < 20) {
+    return "SUPABASE_ANON_KEY must be your real Supabase publishable or anon key.";
+  }
+
+  return "";
+}
 
 function ensureStore() {
   if (!fs.existsSync(dataDir)) {
@@ -1111,8 +1131,10 @@ async function handleApi(request, response, pathname) {
     }
 
     if (request.method === "GET" && pathname === "/api/auth/config") {
+      const setupIssue = supabaseSetupIssue();
       sendJson(response, 200, {
-        configured: Boolean(supabaseUrl && supabaseAnonKey),
+        configured: !setupIssue,
+        setupIssue,
         supabaseUrl,
         supabaseAnonKey
       });

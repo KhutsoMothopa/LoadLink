@@ -66,6 +66,9 @@ async function checkSetup() {
   try {
     const settings = await window.LoadLinkAuth.config();
     setStatus(settings.configured ? "Ready" : "Supabase setup needed", settings.configured ? "active" : "warning");
+    if (!settings.configured && settings.setupIssue) {
+      authHelp.textContent = settings.setupIssue;
+    }
     submitAuthBtn.disabled = !settings.configured;
   } catch (error) {
     setStatus("Auth unavailable", "warning");

@@ -6,7 +6,7 @@ const tls = require("tls");
 
 const root = __dirname;
 const port = Number(process.env.PORT || 4173);
-const dataDir = path.join(root, "data");
+const dataDir = process.env.VERCEL ? path.join("/tmp", "loadlink-data") : path.join(root, "data");
 const bookingsFile = path.join(dataDir, "bookings.json");
 const paymentSessionsFile = path.join(dataDir, "payment-sessions.json");
 const driversFile = path.join(dataDir, "drivers.json");
@@ -1108,18 +1108,28 @@ function serveStatic(request, response, pathname) {
   });
 }
 
-const server = http.createServer((request, response) => {
+async function handleRequest(request, response) {
   const url = new URL(request.url, `http://${request.headers.host}`);
 
   if (url.pathname.startsWith("/api/")) {
-    handleApi(request, response, url.pathname);
+    await handleApi(request, response, url.pathname);
     return;
   }
 
   serveStatic(request, response, url.pathname);
-});
+}
 
-server.listen(port, "127.0.0.1", () => {
-  ensureStore();
-  console.log(`LoadLink Courier website and API running at http://127.0.0.1:${port}`);
-});
+if (require.main === module) {
+  const server = http.createServer((request, response) => {
+    handleRequest(request, response);
+  });
+
+  server.listen(port, "127.0.0.1", () => {
+    ensureStore();
+    console.log(`LoadLink Courier website and API running at http://127.0.0.1:${port}`);
+  });
+}
+
+module.exports = {
+  handleRequest
+};

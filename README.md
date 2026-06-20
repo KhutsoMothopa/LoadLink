@@ -76,6 +76,8 @@ https://www.load-link.co.za/tracking
 https://www.load-link.co.za/payment
 ```
 
+Vercel serves the backend through the catch-all serverless function in `api/[...path].js`, so routes such as `/api/quote` and `/api/driver/jobs` are available in production. Prototype JSON data is written to temporary storage on Vercel and should be replaced with a real database before launch.
+
 ## Dispatcher email
 
 After payment is confirmed, LoadLink prepares a dispatcher notification email to:

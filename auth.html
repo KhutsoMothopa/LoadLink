@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LoadLink | Secure Access</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="index.html" aria-label="LoadLink home">
+        <span class="brand-mark">LL</span>
+        <span>
+          <strong>LoadLink</strong>
+          <small>Secure access</small>
+        </span>
+      </a>
+      <nav class="desktop-nav" aria-label="Access navigation">
+        <a href="auth.html?role=customer">Customer</a>
+        <a href="auth.html?role=driver">Driver</a>
+        <a href="auth.html?role=dispatcher">Dispatcher</a>
+      </nav>
+      <a class="header-action" href="index.html">Back to site</a>
+    </header>
+
+    <main class="tracking-page auth-page">
+      <section class="tracking-hero" aria-labelledby="auth-title">
+        <p class="eyebrow" id="authEyebrow">Secure account</p>
+        <h1 id="auth-title">Sign in to continue</h1>
+        <p id="authIntro">Protected access keeps customer requests, driver records, and dispatcher operations private.</p>
+      </section>
+
+      <section class="auth-layout">
+        <section class="product-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="section-kicker">Account access</p>
+              <h2 id="formTitle">Login</h2>
+            </div>
+            <span class="status-pill neutral" id="authStatus">Checking setup</span>
+          </div>
+
+          <div class="auth-mode-row" aria-label="Account mode">
+            <button class="secondary-dark-button" type="button" id="loginModeBtn">Login</button>
+            <button class="secondary-dark-button" type="button" id="registerModeBtn">Register</button>
+          </div>
+
+          <form class="booking-form auth-form" id="authForm">
+            <div class="field-grid" id="identityFields">
+              <label>
+                <span>Email address</span>
+                <input id="email" name="email" type="email" autocomplete="email" required>
+              </label>
+              <label>
+                <span>Password</span>
+                <input id="password" name="password" type="password" autocomplete="current-password" required>
+              </label>
+            </div>
+
+            <div class="field-grid register-fields" id="profileFields">
+              <label>
+                <span>Full name</span>
+                <input id="fullName" name="fullName" type="text" autocomplete="name">
+              </label>
+              <label>
+                <span>Cellphone number</span>
+                <input id="phone" name="phone" type="tel" autocomplete="tel">
+              </label>
+            </div>
+
+            <div class="field-grid register-fields driver-register-fields" id="driverFields">
+              <label>
+                <span>Vehicle type</span>
+                <select id="vehicleType" name="vehicleType">
+                  <option value="bakkie">Bakkie</option>
+                  <option value="canopy">Bakkie with canopy</option>
+                  <option value="smallTruck">Small truck</option>
+                  <option value="largeTruck">Large truck</option>
+                </select>
+              </label>
+              <label>
+                <span>Number plate</span>
+                <input id="numberPlate" name="numberPlate" type="text" autocomplete="off">
+              </label>
+              <label>
+                <span>Licence number</span>
+                <input id="licenceNumber" name="licenceNumber" type="text" autocomplete="off">
+              </label>
+              <label>
+                <span>Permit number</span>
+                <input id="permitNumber" name="permitNumber" type="text" autocomplete="off">
+              </label>
+            </div>
+
+            <button class="primary-button payment-submit" type="submit" id="submitAuthBtn">Login</button>
+            <p class="fine-print" id="authHelp">Dispatcher accounts are created privately by the platform owner and cannot self-register here.</p>
+          </form>
+        </section>
+
+        <aside class="product-panel">
+          <p class="section-kicker">Security model</p>
+          <h2>Role-protected platforms</h2>
+          <dl class="ops-summary auth-summary">
+            <div>
+              <dt>Customers</dt>
+              <dd>Own bookings only</dd>
+            </div>
+            <div>
+              <dt>Drivers</dt>
+              <dd>Own profile and assigned jobs</dd>
+            </div>
+            <div>
+              <dt>Dispatcher</dt>
+              <dd>Approved operations account</dd>
+            </div>
+            <div>
+              <dt>Database</dt>
+              <dd>Supabase with RLS</dd>
+            </div>
+          </dl>
+          <p class="fine-print">Once Supabase environment variables are set, this page creates authenticated profiles and separates access by role.</p>
+        </aside>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div>
+        <strong>LoadLink Access</strong>
+        <p>Private accounts for customers, approved drivers, and dispatch operations.</p>
+      </div>
+      <a href="index.html">Return home</a>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="auth-client.js"></script>
+    <script src="auth.js"></script>
+  </body>
+</html>

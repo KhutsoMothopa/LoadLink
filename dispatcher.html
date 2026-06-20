@@ -6,7 +6,7 @@
     <title>LoadLink | Dispatch Desk</title>
     <link rel="stylesheet" href="styles.css">
   </head>
-  <body>
+  <body data-required-role="dispatcher">
     <header class="site-header">
       <a class="brand" href="dispatcher.html" aria-label="LoadLink dispatch home">
         <span class="brand-mark">LL</span>
@@ -19,7 +19,11 @@
         <a href="#requests">Requests</a>
         <a href="#drivers">Drivers</a>
       </nav>
-      <button class="header-action" type="button" id="refreshDispatchBtn">Refresh desk</button>
+      <div class="header-actions">
+        <span class="status-pill neutral" data-auth-status>Dispatcher account</span>
+        <button class="header-action" type="button" id="refreshDispatchBtn">Refresh desk</button>
+        <button class="header-action subtle-action" type="button" data-sign-out>Sign out</button>
+      </div>
     </header>
 
     <main class="tracking-page">
@@ -68,6 +72,9 @@
       <a href="#requests">Review requests</a>
     </footer>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="auth-client.js"></script>
+    <script src="auth-guard.js"></script>
     <script src="ops-storage.js"></script>
     <script src="dispatcher.js"></script>
   </body>

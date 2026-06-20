@@ -142,6 +142,18 @@ function driverCard(driver) {
           <dd>${driver.vehicleTypes.join(", ")}</dd>
         </div>
         <div>
+          <dt>Number plate</dt>
+          <dd>${driver.numberPlate || "Not registered"}</dd>
+        </div>
+        <div>
+          <dt>Contact</dt>
+          <dd>${driver.phone || driver.email || "Not available"}</dd>
+        </div>
+        <div>
+          <dt>Driver status</dt>
+          <dd>${driver.jobStatus || (driver.available ? "available" : "offline")}</dd>
+        </div>
+        <div>
           <dt>Rating</dt>
           <dd>${driver.rating}</dd>
         </div>
@@ -156,6 +168,36 @@ function renderDrivers(drivers) {
   dispatcherDriverList.innerHTML = drivers.length
     ? drivers.map(driverCard).join("")
     : `<p class="fine-print">No drivers are loaded yet.</p>`;
+}
+
+async function registeredDriversFromSupabase() {
+  if (!window.LoadLinkAuth) return [];
+
+  try {
+    const supabase = await window.LoadLinkAuth.client();
+    const { data, error } = await supabase
+      .from("driver_profiles")
+      .select("user_id, vehicle_type, number_plate, current_location_key, current_location_label, availability, status, rating, approved, profiles(full_name, email, phone)");
+
+    if (error) throw error;
+
+    return (data || []).map((driver) => ({
+      id: driver.user_id,
+      name: driver.profiles?.full_name || "Registered driver",
+      available: Boolean(driver.availability) && driver.status !== "on_job",
+      vehicleTypes: [driver.vehicle_type],
+      currentLocationKey: driver.current_location_key,
+      currentLocationLabel: driver.current_location_label || "Location not shared",
+      rating: driver.rating || 5,
+      numberPlate: driver.number_plate,
+      phone: driver.profiles?.phone,
+      email: driver.profiles?.email,
+      jobStatus: driver.status,
+      approved: driver.approved
+    }));
+  } catch (error) {
+    return [];
+  }
 }
 
 async function loadDispatcher() {
@@ -192,8 +234,10 @@ async function loadDispatcher() {
       ? window.LoadLinkOps.getDrivers(driversPayload.drivers)
       : driversPayload.drivers;
 
+    const registeredDrivers = await registeredDriversFromSupabase();
+
     renderRequests(requests);
-    renderDrivers(drivers);
+    renderDrivers(registeredDrivers.length ? registeredDrivers : drivers);
   } catch (error) {
     const requests = window.LoadLinkOps?.paidRequests() || [];
     const drivers = window.LoadLinkOps?.getDrivers() || [];

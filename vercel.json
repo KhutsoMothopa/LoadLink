@@ -25,6 +25,10 @@
     {
       "source": "/gateway",
       "destination": "/gateway.html"
+    },
+    {
+      "source": "/auth",
+      "destination": "/auth.html"
     }
   ]
 }

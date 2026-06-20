@@ -6,7 +6,7 @@
     <title>LoadLink | Secure Checkout</title>
     <link rel="stylesheet" href="styles.css">
   </head>
-  <body>
+  <body data-required-role="customer">
     <header class="site-header">
       <a class="brand" href="index.html" aria-label="LoadLink home">
         <span class="brand-mark">LL</span>
@@ -20,7 +20,10 @@
         <a href="payment.html">Payment</a>
         <a href="tracking.html">Tracking</a>
       </nav>
-      <a class="header-action" href="payment.html">Back to payment</a>
+      <div class="header-actions">
+        <span class="status-pill neutral" data-auth-status>Account</span>
+        <a class="header-action" href="payment.html">Back to payment</a>
+      </div>
     </header>
 
     <main class="tracking-page">
@@ -73,6 +76,9 @@
       <a href="payment.html">Cancel checkout</a>
     </footer>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="auth-client.js"></script>
+    <script src="auth-guard.js"></script>
     <script src="ops-storage.js"></script>
     <script src="gateway.js"></script>
   </body>

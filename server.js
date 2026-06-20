@@ -16,6 +16,8 @@ const activeDriverId = process.env.LOADLINK_DRIVER_ID || "DRV-101";
 const dispatcherEmail = process.env.DISPATCHER_EMAIL || "clementmothopa@gmail.com";
 const dispatchFromEmail = process.env.DISPATCH_FROM_EMAIL || "dispatch@loadlink.co.za";
 const dispatchFromName = process.env.DISPATCH_FROM_NAME || "LoadLink Dispatch";
+const supabaseUrl = process.env.SUPABASE_URL || "";
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || "";
 
 const locations = {
   sandton: { label: "Sandton", address: "Sandton City, 83 Rivonia Road, Sandton", lat: -26.1076, lng: 28.0567 },
@@ -1105,6 +1107,15 @@ async function handleApi(request, response, pathname) {
 
     if (request.method === "GET" && pathname === "/api/locations") {
       sendJson(response, 200, { locations, addressBook, vehicleRates, loadFees });
+      return;
+    }
+
+    if (request.method === "GET" && pathname === "/api/auth/config") {
+      sendJson(response, 200, {
+        configured: Boolean(supabaseUrl && supabaseAnonKey),
+        supabaseUrl,
+        supabaseAnonKey
+      });
       return;
     }
 

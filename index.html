@@ -6,7 +6,7 @@
     <title>LoadLink | Bakkie and Truck Courier Platform</title>
     <link rel="stylesheet" href="styles.css">
   </head>
-  <body>
+  <body data-required-role="customer">
     <header class="site-header">
       <a class="brand" href="#top" aria-label="LoadLink home">
         <span class="brand-mark">LL</span>
@@ -20,7 +20,11 @@
         <a href="payment.html">Payment</a>
         <a href="tracking.html">Tracking</a>
       </nav>
-      <a class="header-action" href="#book">Request vehicle</a>
+      <div class="header-actions">
+        <span class="status-pill neutral" data-auth-status>Account</span>
+        <a class="header-action" href="auth.html?role=customer">Customer login</a>
+        <button class="header-action subtle-action" type="button" data-sign-out>Sign out</button>
+      </div>
     </header>
 
     <main id="top">
@@ -220,6 +224,9 @@
       <a href="#book">Create another booking</a>
     </footer>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="auth-client.js"></script>
+    <script src="auth-guard.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

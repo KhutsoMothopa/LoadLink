@@ -6,7 +6,7 @@
     <title>LoadLink | Driver Jobs</title>
     <link rel="stylesheet" href="styles.css">
   </head>
-  <body>
+  <body data-required-role="driver">
     <header class="site-header">
       <a class="brand" href="driver.html" aria-label="LoadLink driver home">
         <span class="brand-mark">LL</span>
@@ -20,7 +20,11 @@
         <a href="#availability">Availability</a>
         <a href="#earnings">Earnings</a>
       </nav>
-      <button class="header-action" type="button" id="refreshJobsBtn">Refresh jobs</button>
+      <div class="header-actions">
+        <span class="status-pill neutral" data-auth-status>Driver account</span>
+        <button class="header-action" type="button" id="refreshJobsBtn">Refresh jobs</button>
+        <button class="header-action subtle-action" type="button" data-sign-out>Sign out</button>
+      </div>
     </header>
 
     <main class="tracking-page">
@@ -109,6 +113,9 @@
       <a href="#availability">Update status</a>
     </footer>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="auth-client.js"></script>
+    <script src="auth-guard.js"></script>
     <script src="ops-storage.js"></script>
     <script src="driver.js"></script>
   </body>

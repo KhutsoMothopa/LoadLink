@@ -1,0 +1,259 @@
+(function () {
+  const sessionKey = "loadlinkAuthSession";
+  const profileKey = "loadlinkAuthProfile";
+  let clientPromise = null;
+
+  async function apiRequest(path, options = {}) {
+    const response = await fetch(path, {
+      headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+      ...options
+    });
+    const text = await response.text();
+    const payload = text ? JSON.parse(text) : {};
+
+    if (!response.ok) {
+      throw new Error(payload.error || "LoadLink API request failed");
+    }
+
+    return payload;
+  }
+
+  function saveSession(session) {
+    if (!session) return;
+    window.localStorage.setItem(sessionKey, JSON.stringify(session));
+  }
+
+  function storedSession() {
+    try {
+      return JSON.parse(window.localStorage.getItem(sessionKey) || "null");
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function saveProfile(profile) {
+    if (!profile) return;
+    window.localStorage.setItem(profileKey, JSON.stringify(profile));
+  }
+
+  function storedProfile() {
+    try {
+      return JSON.parse(window.localStorage.getItem(profileKey) || "null");
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function clearSession() {
+    window.localStorage.removeItem(sessionKey);
+    window.localStorage.removeItem(profileKey);
+  }
+
+  async function config() {
+    return apiRequest("/api/auth/config");
+  }
+
+  async function client() {
+    if (clientPromise) return clientPromise;
+
+    clientPromise = config().then((settings) => {
+      if (!settings.configured) {
+        throw new Error("Supabase is not configured yet.");
+      }
+
+      if (!window.supabase?.createClient) {
+        throw new Error("Supabase client library could not be loaded.");
+      }
+
+      return window.supabase.createClient(settings.supabaseUrl, settings.supabaseAnonKey);
+    });
+
+    return clientPromise;
+  }
+
+  async function currentSession() {
+    try {
+      const supabase = await client();
+      const { data } = await supabase.auth.getSession();
+      const session = data?.session || storedSession();
+
+      if (session) saveSession(session);
+      return session;
+    } catch (error) {
+      return storedSession();
+    }
+  }
+
+  async function currentProfile() {
+    const session = await currentSession();
+
+    if (!session?.user) return null;
+
+    try {
+      const supabase = await client();
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", session.user.id)
+        .single();
+
+      if (error) throw error;
+      saveProfile(data);
+      return data;
+    } catch (error) {
+      return storedProfile();
+    }
+  }
+
+  async function signIn(email, password) {
+    const supabase = await client();
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (error) throw error;
+    saveSession(data.session);
+
+    return ensureProfile(data.user);
+  }
+
+  async function ensureProfile(user) {
+    if (!user?.id) return null;
+
+    const supabase = await client();
+    const { data: existingProfile } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (existingProfile) {
+      saveProfile(existingProfile);
+      return existingProfile;
+    }
+
+    const metadata = user.user_metadata || {};
+    const role = metadata.role || "customer";
+    const profile = {
+      id: user.id,
+      role,
+      full_name: metadata.full_name || user.email,
+      email: user.email,
+      phone: metadata.phone || "Not provided"
+    };
+
+    const { error: profileError } = await supabase.from("profiles").insert(profile);
+    if (profileError) throw profileError;
+
+    if (role === "customer") {
+      const { error: customerError } = await supabase.from("customer_profiles").insert({ user_id: user.id });
+      if (customerError) throw customerError;
+    }
+
+    if (role === "driver") {
+      const { error: driverError } = await supabase.from("driver_profiles").insert({
+        user_id: user.id,
+        vehicle_type: metadata.vehicle_type || "bakkie",
+        number_plate: metadata.number_plate || "Not provided",
+        licence_number: metadata.licence_number || "Not provided",
+        permit_number: metadata.permit_number || null,
+        availability: false,
+        status: "offline",
+        approved: false
+      });
+
+      if (driverError) throw driverError;
+    }
+
+    saveProfile(profile);
+    return profile;
+  }
+
+  async function signUp({ role, fullName, email, phone, password, driver }) {
+    const supabase = await client();
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          role,
+          full_name: fullName,
+          phone,
+          vehicle_type: driver.vehicleType,
+          number_plate: driver.numberPlate,
+          licence_number: driver.licenceNumber,
+          permit_number: driver.permitNumber
+        }
+      }
+    });
+
+    if (error) throw error;
+
+    const userId = data.user?.id;
+
+    if (!userId) {
+      throw new Error("Account created. Check email confirmation before signing in.");
+    }
+
+    if (!data.session) {
+      throw new Error("Account created. Check email confirmation before signing in.");
+    }
+
+    const profile = {
+      id: userId,
+      role,
+      full_name: fullName,
+      email,
+      phone
+    };
+
+    const { error: profileError } = await supabase.from("profiles").insert(profile);
+    if (profileError) throw profileError;
+
+    if (role === "customer") {
+      const { error: customerError } = await supabase.from("customer_profiles").insert({ user_id: userId });
+      if (customerError) throw customerError;
+    }
+
+    if (role === "driver") {
+      const { error: driverError } = await supabase.from("driver_profiles").insert({
+        user_id: userId,
+        vehicle_type: driver.vehicleType,
+        number_plate: driver.numberPlate,
+        licence_number: driver.licenceNumber,
+        permit_number: driver.permitNumber || null,
+        current_location_key: driver.currentLocationKey || null,
+        current_location_label: driver.currentLocationLabel || null,
+        availability: false,
+        status: "offline",
+        approved: false
+      });
+
+      if (driverError) throw driverError;
+    }
+
+    saveSession(data.session);
+    saveProfile(profile);
+    return profile;
+  }
+
+  async function signOut() {
+    try {
+      const supabase = await client();
+      await supabase.auth.signOut();
+    } catch (error) {
+      // Local clear still protects this browser session if the network is unavailable.
+    }
+
+    clearSession();
+  }
+
+  window.LoadLinkAuth = {
+    config,
+    client,
+    currentSession,
+    currentProfile,
+    signIn,
+    signUp,
+    signOut,
+    clearSession
+  };
+})();

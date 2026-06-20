@@ -185,8 +185,31 @@ async function loadProfile() {
 async function saveProfile() {
   setAvailabilityStatus("Saving", "warning");
   saveAvailabilityBtn.disabled = true;
+  const selectedLocationLabel = locationSelect.options[locationSelect.selectedIndex]?.textContent || "Selected area";
 
   try {
+    if (window.LoadLinkAuth) {
+      const [session, supabase] = await Promise.all([
+        window.LoadLinkAuth.currentSession(),
+        window.LoadLinkAuth.client()
+      ]);
+
+      if (session?.user?.id) {
+        const { error: driverProfileError } = await supabase
+          .from("driver_profiles")
+          .update({
+            availability: availableToggle.checked,
+            status: availableToggle.checked ? "available" : "offline",
+            current_location_key: locationSelect.value,
+            current_location_label: selectedLocationLabel,
+            updated_at: new Date().toISOString()
+          })
+          .eq("user_id", session.user.id);
+
+        if (driverProfileError) throw driverProfileError;
+      }
+    }
+
     const payload = await apiRequest("/api/driver/profile", {
       method: "PATCH",
       body: JSON.stringify({
@@ -202,12 +225,11 @@ async function saveProfile() {
     ])));
     await loadJobs();
   } catch (error) {
-    const locationLabel = locationSelect.options[locationSelect.selectedIndex]?.textContent || "Selected area";
     const profile = window.LoadLinkOps?.saveDriverProfile({
       id: window.LoadLinkOps.activeDriverId,
       available: availableToggle.checked,
       currentLocationKey: locationSelect.value,
-      currentLocationLabel: locationLabel,
+      currentLocationLabel: selectedLocationLabel,
       updatedAt: new Date().toISOString()
     });
 

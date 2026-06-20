@@ -20,6 +20,7 @@ Customer website for a bakkie and truck courier marketplace. LoadLink lets custo
 - Server-side quote calculation
 - Address geocoding foundation with service-area fallback
 - Booking API with lightweight JSON persistence
+- Supabase-ready account and role foundation for customers, drivers, and dispatchers
 - Formal, professional visual style
 
 ## Open in VS Code
@@ -82,6 +83,7 @@ https://www.load-link.co.za/driver
 https://www.load-link.co.za/dispatcher
 https://www.load-link.co.za/tracking
 https://www.load-link.co.za/payment
+https://www.load-link.co.za/auth
 ```
 
 Vercel serves the backend through the single serverless API gateway in `api/index.js`, so routes such as `/api/quote` and `/api/driver/jobs` are available in production without exceeding the Hobby plan function limit. For long-term reliability, booking, payment, driver, and dispatch records should be moved to a managed database.
@@ -111,12 +113,38 @@ When SMTP is not configured, the platform records the same dispatcher notificati
 
 ## Product direction
 
-The next milestone should connect the geocoding foundation to a real mapping provider. Driver tools, dispatcher tools, and payment handling should be built as separate product areas from this customer booking website.
+The next milestone should connect the booking, driver, dispatcher, and payout workflows directly to Supabase tables. The schema and account pages are now included, but the operational APIs still keep the prototype JSON fallback until Supabase environment variables and database records are connected end to end.
+
+## Supabase account setup
+
+Create a Supabase project, then run:
+
+```text
+supabase/schema.sql
+```
+
+Add these Vercel environment variables:
+
+```bash
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-public-anon-key
+```
+
+Account routes:
+
+```text
+/auth?role=customer
+/auth?role=driver
+/auth?role=dispatcher
+```
+
+Customers and drivers can register from the account page. Dispatcher accounts should be created privately in Supabase Auth, then added to `public.profiles` with role `dispatcher` using the SQL note at the bottom of `supabase/schema.sql`.
 
 ## Current API routes
 
 - `GET /api/health`
 - `GET /api/locations`
+- `GET /api/auth/config`
 - `POST /api/geocode`
 - `POST /api/quote`
 - `POST /api/bookings`

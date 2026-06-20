@@ -6,7 +6,7 @@
     <title>LoadLink | Track Delivery</title>
     <link rel="stylesheet" href="styles.css">
   </head>
-  <body>
+  <body data-required-role="customer">
     <header class="site-header">
       <a class="brand" href="index.html" aria-label="LoadLink home">
         <span class="brand-mark">LL</span>
@@ -20,7 +20,11 @@
         <a href="payment.html">Payment</a>
         <a href="tracking.html">Tracking</a>
       </nav>
-      <a class="header-action" href="index.html#book">New request</a>
+      <div class="header-actions">
+        <span class="status-pill neutral" data-auth-status>Account</span>
+        <a class="header-action" href="index.html#book">New request</a>
+        <button class="header-action subtle-action" type="button" data-sign-out>Sign out</button>
+      </div>
     </header>
 
     <main class="tracking-page">
@@ -106,6 +110,9 @@
       <a href="index.html#book">Create another booking</a>
     </footer>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="auth-client.js"></script>
+    <script src="auth-guard.js"></script>
     <script src="ops-storage.js"></script>
     <script src="tracking.js"></script>
   </body>

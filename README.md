@@ -21,6 +21,7 @@ Customer website for a bakkie and truck courier marketplace. LoadLink lets custo
 - Address geocoding foundation with service-area fallback
 - Booking API with lightweight JSON persistence
 - Supabase-ready account and role foundation for customers, drivers, and dispatchers
+- Public Privacy Policy, Terms of Service, and Contact pages
 - Formal, professional visual style
 
 ## Open in VS Code
@@ -84,6 +85,9 @@ https://www.load-link.co.za/dispatcher
 https://www.load-link.co.za/tracking
 https://www.load-link.co.za/payment
 https://www.load-link.co.za/auth
+https://www.load-link.co.za/privacy
+https://www.load-link.co.za/terms
+https://www.load-link.co.za/contact
 ```
 
 Vercel serves the backend through the single serverless API gateway in `api/index.js`, so routes such as `/api/quote` and `/api/driver/jobs` are available in production without exceeding the Hobby plan function limit. For long-term reliability, booking, payment, driver, and dispatch records should be moved to a managed database.

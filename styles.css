@@ -686,6 +686,48 @@ a:focus-visible {
   margin-top: 22px;
 }
 
+.legal-page .tracking-hero {
+  padding-bottom: 24px;
+}
+
+.legal-layout {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 clamp(16px, 5vw, 72px) 72px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.legal-panel h2,
+.contact-layout h2 {
+  margin: 0 0 16px;
+  color: #17202b;
+  font-size: clamp(1.4rem, 2vw, 2rem);
+}
+
+.legal-panel p,
+.legal-copy p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.legal-panel p + p,
+.legal-copy p + p {
+  margin-top: 14px;
+}
+
+.legal-panel a,
+.contact-summary a {
+  color: var(--accent-dark);
+  font-weight: 900;
+}
+
+.contact-layout {
+  padding-top: 0;
+}
+
 .driver-workspace {
   max-width: 1240px;
   margin: 0 auto;
@@ -941,6 +983,13 @@ a:focus-visible {
   font-weight: 900;
 }
 
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 16px;
+}
+
 @media (max-width: 1040px) {
   .desktop-nav {
     display: none;
@@ -951,6 +1000,7 @@ a:focus-visible {
   .customer-grid,
   .tracking-layout,
   .auth-layout,
+  .legal-layout,
   .driver-dashboard,
   .dispatcher-assignment-row,
   .roadmap-section {
@@ -1009,6 +1059,7 @@ a:focus-visible {
   .customer-grid,
   .tracking-layout,
   .auth-layout,
+  .legal-layout,
   .roadmap-section {
     padding-left: 16px;
     padding-right: 16px;
@@ -1042,5 +1093,14 @@ a:focus-visible {
   .site-footer a {
     display: inline-block;
     margin-top: 18px;
+  }
+
+  .footer-links {
+    justify-content: flex-start;
+    margin-top: 18px;
+  }
+
+  .footer-links a {
+    margin-top: 0;
   }
 }

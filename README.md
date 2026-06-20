@@ -67,6 +67,15 @@ Driver jobs are available at:
 http://127.0.0.1:4173/driver.html
 ```
 
+Production routes on Vercel:
+
+```text
+https://www.load-link.co.za/
+https://www.load-link.co.za/driver
+https://www.load-link.co.za/tracking
+https://www.load-link.co.za/payment
+```
+
 ## Dispatcher email
 
 After payment is confirmed, LoadLink prepares a dispatcher notification email to:

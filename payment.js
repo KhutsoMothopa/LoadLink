@@ -1,4 +1,10 @@
 const payBtn = document.querySelector("#payBtn");
+const params = new URLSearchParams(window.location.search);
+const bookingId = params.get("bookingId");
+const activeBookingKey = "loadlinkActiveBooking";
+const checkoutSessionKey = "loadlinkCheckoutSession";
+
+let activeBooking = null;
 
 const formatRand = (value) => `R ${Math.round(value).toLocaleString("en-ZA")}`;
 
@@ -7,13 +13,31 @@ async function apiRequest(path, options = {}) {
     headers: { "Content-Type": "application/json", ...(options.headers || {}) },
     ...options
   });
-  const payload = await response.json();
+  const text = await response.text();
+  const payload = text ? JSON.parse(text) : {};
 
   if (!response.ok) {
     throw new Error(payload.error || "LoadLink API request failed");
   }
 
   return payload;
+}
+
+function storedBooking() {
+  try {
+    const booking = JSON.parse(window.sessionStorage.getItem(activeBookingKey) || "null");
+    if (!bookingId || booking?.id === bookingId) return booking;
+  } catch (error) {
+    return null;
+  }
+
+  return null;
+}
+
+function saveActiveBooking(booking) {
+  if (!booking) return;
+  activeBooking = booking;
+  window.sessionStorage.setItem(activeBookingKey, JSON.stringify(booking));
 }
 
 function selectedMethod() {
@@ -33,6 +57,7 @@ function renderEmpty() {
 }
 
 function renderBooking(booking) {
+  saveActiveBooking(booking);
   document.querySelector("#bookingId").textContent = booking.id;
   document.querySelector("#paymentAmount").textContent = formatRand(booking.price);
   document.querySelector("#pickupAddress").textContent = booking.pickupAddress || booking.pickup?.address || "Not available";
@@ -46,17 +71,28 @@ function renderBooking(booking) {
 }
 
 async function loadPayment() {
+  const fallbackBooking = storedBooking();
+
+  if (fallbackBooking) {
+    renderBooking(fallbackBooking);
+  }
+
   try {
-    const payload = await apiRequest("/api/bookings/current");
+    const payload = await apiRequest(bookingId ? `/api/bookings/${bookingId}` : "/api/bookings/current");
 
     if (!payload.booking) {
-      renderEmpty();
+      if (!fallbackBooking) renderEmpty();
       return;
     }
 
     renderBooking(payload.booking);
   } catch (error) {
-    setPaymentStatus("Payment offline", "warning");
+    if (fallbackBooking) {
+      setPaymentStatus("Awaiting payment", "warning");
+      return;
+    }
+
+    setPaymentStatus("Payment unavailable", "warning");
     payBtn.disabled = true;
   }
 }
@@ -66,9 +102,9 @@ async function startCheckout() {
   payBtn.textContent = "Opening checkout...";
 
   try {
-    const current = await apiRequest("/api/bookings/current");
+    const booking = activeBooking || storedBooking();
 
-    if (!current.booking) {
+    if (!booking) {
       renderEmpty();
       return;
     }
@@ -76,11 +112,14 @@ async function startCheckout() {
     const payload = await apiRequest("/api/payments/checkout", {
       method: "POST",
       body: JSON.stringify({
-        bookingId: current.booking.id,
-        method: selectedMethod()
+        bookingId: booking.id,
+        method: selectedMethod(),
+        bookingSnapshot: booking
       })
     });
 
+    window.sessionStorage.setItem(checkoutSessionKey, JSON.stringify(payload.session));
+    saveActiveBooking(payload.session.booking || booking);
     window.location.href = payload.session.redirectUrl;
   } catch (error) {
     setPaymentStatus("Checkout failed", "warning");

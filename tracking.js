@@ -7,15 +7,31 @@ const statusMap = {
   delivered: { label: "Delivered", className: "complete", timelineIndex: 5 }
 };
 
+const activeBookingKey = "loadlinkActiveBooking";
+
 async function apiRequest(path) {
   const response = await fetch(path);
-  const payload = await response.json();
+  const text = await response.text();
+  const payload = text ? JSON.parse(text) : {};
 
   if (!response.ok) {
     throw new Error(payload.error || "LoadLink API request failed");
   }
 
   return payload;
+}
+
+function storedBooking() {
+  try {
+    return JSON.parse(window.sessionStorage.getItem(activeBookingKey) || "null");
+  } catch (error) {
+    return null;
+  }
+}
+
+function saveActiveBooking(booking) {
+  if (!booking) return;
+  window.sessionStorage.setItem(activeBookingKey, JSON.stringify(booking));
 }
 
 function setPill(element, label, className) {
@@ -41,6 +57,7 @@ function renderTimeline(status) {
 }
 
 function renderBooking(booking) {
+  saveActiveBooking(booking);
   const driver = booking.assignedDriver;
   const paid = booking.payment?.status === "paid";
 
@@ -61,17 +78,25 @@ function renderBooking(booking) {
 }
 
 async function refreshTracking() {
+  const fallbackBooking = storedBooking();
+
+  if (fallbackBooking) {
+    renderBooking(fallbackBooking);
+  }
+
   try {
-    const payload = await apiRequest("/api/bookings/current");
+    const payload = await apiRequest(fallbackBooking?.id ? `/api/bookings/${fallbackBooking.id}` : "/api/bookings/current");
 
     if (!payload.booking) {
-      renderEmpty();
+      if (!fallbackBooking) renderEmpty();
       return;
     }
 
     renderBooking(payload.booking);
   } catch (error) {
-    setPill(document.querySelector("#tripStatus"), "Tracking offline", "warning");
+    if (!fallbackBooking) {
+      setPill(document.querySelector("#tripStatus"), "Tracking unavailable", "warning");
+    }
   }
 }
 

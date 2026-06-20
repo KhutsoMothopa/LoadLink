@@ -1,6 +1,8 @@
 const completePaymentBtn = document.querySelector("#completePaymentBtn");
 const params = new URLSearchParams(window.location.search);
 const sessionId = params.get("sessionId");
+const activeBookingKey = "loadlinkActiveBooking";
+const checkoutSessionKey = "loadlinkCheckoutSession";
 
 const formatRand = (value) => `R ${Math.round(value).toLocaleString("en-ZA")}`;
 
@@ -9,13 +11,41 @@ async function apiRequest(path, options = {}) {
     headers: { "Content-Type": "application/json", ...(options.headers || {}) },
     ...options
   });
-  const payload = await response.json();
+  const text = await response.text();
+  const payload = text ? JSON.parse(text) : {};
 
   if (!response.ok) {
     throw new Error(payload.error || "LoadLink API request failed");
   }
 
   return payload;
+}
+
+function storedBooking() {
+  try {
+    return JSON.parse(window.sessionStorage.getItem(activeBookingKey) || "null");
+  } catch (error) {
+    return null;
+  }
+}
+
+function storedSession() {
+  try {
+    const session = JSON.parse(window.sessionStorage.getItem(checkoutSessionKey) || "null");
+    return session?.id === sessionId ? session : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+function saveSession(session) {
+  if (!session) return;
+  window.sessionStorage.setItem(checkoutSessionKey, JSON.stringify(session));
+}
+
+function saveBooking(booking) {
+  if (!booking) return;
+  window.sessionStorage.setItem(activeBookingKey, JSON.stringify(booking));
 }
 
 function setStatus(label, className) {
@@ -25,6 +55,8 @@ function setStatus(label, className) {
 }
 
 function renderSession(session) {
+  saveSession(session);
+  saveBooking(session.booking);
   document.querySelector("#gatewayProvider").textContent = session.provider;
   document.querySelector("#bookingId").textContent = session.bookingId;
   document.querySelector("#paymentAmount").textContent = formatRand(session.amount);
@@ -42,12 +74,20 @@ async function loadGatewaySession() {
     return;
   }
 
+  const fallbackSession = storedSession();
+
+  if (fallbackSession) {
+    renderSession(fallbackSession);
+  }
+
   try {
     const payload = await apiRequest(`/api/payments/sessions/${sessionId}`);
     renderSession(payload.session);
   } catch (error) {
-    setStatus("Session unavailable", "warning");
-    completePaymentBtn.disabled = true;
+    if (!fallbackSession) {
+      setStatus("Session unavailable", "warning");
+      completePaymentBtn.disabled = true;
+    }
   }
 }
 
@@ -56,7 +96,14 @@ async function completePayment() {
   completePaymentBtn.textContent = "Confirming...";
 
   try {
-    await apiRequest(`/api/payments/sessions/${sessionId}/confirm`, { method: "POST" });
+    const payload = await apiRequest(`/api/payments/sessions/${sessionId}/confirm`, {
+      method: "POST",
+      body: JSON.stringify({
+        sessionSnapshot: storedSession(),
+        bookingSnapshot: storedBooking()
+      })
+    });
+    saveBooking(payload.session?.booking);
     window.location.href = "tracking.html";
   } catch (error) {
     setStatus("Payment failed", "warning");

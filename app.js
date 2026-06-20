@@ -17,6 +17,7 @@ let draftQuote = null;
 let quoteRequestId = 0;
 
 const formatRand = (value) => `R ${Math.round(value).toLocaleString("en-ZA")}`;
+const activeBookingKey = "loadlinkActiveBooking";
 
 function todayIsoDate() {
   return new Date().toISOString().slice(0, 10);
@@ -34,6 +35,11 @@ async function apiRequest(path, options = {}) {
   }
 
   return payload;
+}
+
+function saveActiveBooking(booking) {
+  if (!booking) return;
+  window.sessionStorage.setItem(activeBookingKey, JSON.stringify(booking));
 }
 
 function formPayload() {
@@ -130,6 +136,7 @@ async function loadCurrentBooking() {
     if (payload.booking) {
       activeTrip = payload.booking;
       draftQuote = payload.booking;
+      saveActiveBooking(payload.booking);
       syncFormFromTrip(payload.booking);
       render();
       return;
@@ -153,8 +160,9 @@ async function confirmBooking() {
 
     activeTrip = payload.booking;
     draftQuote = payload.booking;
+    saveActiveBooking(payload.booking);
     render();
-    window.location.href = "payment.html";
+    window.location.href = `payment.html?bookingId=${encodeURIComponent(payload.booking.id)}`;
   } catch (error) {
     setPill(document.querySelector("#bookingStatus"), "Request failed", "warning");
   } finally {
@@ -166,6 +174,7 @@ async function confirmBooking() {
 async function clearRequest() {
   activeTrip = null;
   draftQuote = null;
+  window.sessionStorage.removeItem(activeBookingKey);
 
   try {
     await apiRequest("/api/bookings/current", { method: "DELETE" });

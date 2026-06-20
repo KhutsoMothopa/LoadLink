@@ -649,6 +649,34 @@ function createBooking(input) {
   };
 }
 
+function restoreBookingFromSnapshot(snapshot) {
+  if (!snapshot || !/^LL-\d+$/.test(String(snapshot.id || ""))) {
+    throw new Error("Booking snapshot is invalid");
+  }
+
+  const booking = createBooking({
+    customerName: snapshot.customerName,
+    customerPhone: snapshot.customerPhone,
+    pickupAddress: snapshot.pickupAddress || snapshot.pickup?.address,
+    dropoffAddress: snapshot.dropoffAddress || snapshot.dropoff?.address,
+    pickupKey: snapshot.pickupKey,
+    dropoffKey: snapshot.dropoffKey,
+    loadTypeKey: snapshot.loadTypeKey,
+    vehicleKey: snapshot.vehicleKey,
+    pickupDate: snapshot.pickupDate,
+    pickupTime: snapshot.pickupTime,
+    helpers: snapshot.helpers,
+    stairs: snapshot.stairs,
+    notes: snapshot.notes
+  });
+
+  booking.id = snapshot.id;
+  booking.createdAt = snapshot.createdAt || booking.createdAt;
+  booking.updatedAt = new Date().toISOString();
+  booking.statusHistory = [{ status: "awaiting_payment", at: booking.createdAt, actor: "customer" }];
+  return booking;
+}
+
 function latestActiveBooking(bookings) {
   const active = bookings.filter((booking) => booking.status !== "delivered");
   return active[active.length - 1] || bookings[bookings.length - 1] || null;
@@ -692,6 +720,22 @@ function getCurrentBooking() {
   advanceBookingForCustomer(booking);
 
   if (booking.status !== previousStatus || (booking.assignedDriver && !bookings.find((item) => item.id === booking.id).assignedDriver)) {
+    writeBookings(bookings);
+  }
+
+  return booking;
+}
+
+function getBookingById(id) {
+  const bookings = readBookings();
+  const booking = bookings.find((item) => item.id === id);
+
+  if (!booking) return null;
+
+  const previousStatus = booking.status;
+  advanceBookingForCustomer(booking);
+
+  if (booking.status !== previousStatus) {
     writeBookings(bookings);
   }
 
@@ -795,7 +839,12 @@ function respondToDriverJob(id, action, driverId = activeDriverId) {
 
 async function markBookingPaid(id, input = {}) {
   const bookings = readBookings();
-  const booking = bookings.find((item) => item.id === id);
+  let booking = bookings.find((item) => item.id === id);
+
+  if (!booking && input.bookingSnapshot) {
+    booking = restoreBookingFromSnapshot(input.bookingSnapshot);
+    bookings.push(booking);
+  }
 
   if (!booking) return null;
 
@@ -849,10 +898,16 @@ function createCheckoutSession(input) {
   const method = String(input.method || "card").trim();
   const sessionId = `CHK-${Date.now().toString().slice(-8)}`;
   const bookings = readBookings();
-  const booking = bookings.find((item) => item.id === bookingId);
+  let booking = bookings.find((item) => item.id === bookingId);
+
+  if (!booking && input.bookingSnapshot) {
+    booking = restoreBookingFromSnapshot(input.bookingSnapshot);
+    bookings.push(booking);
+    writeBookings(bookings);
+  }
 
   if (!booking) {
-    throw new Error("Booking not found");
+    throw new Error("Booking not found. Please return to the booking page and submit the request again.");
   }
 
   if (booking.payment?.status === "paid") {
@@ -878,8 +933,26 @@ function createCheckoutSession(input) {
   return session;
 }
 
-function getCheckoutSession(id) {
-  const session = readPaymentSessions().find((item) => item.id === id);
+function getCheckoutSession(id, input = {}) {
+  let session = readPaymentSessions().find((item) => item.id === id);
+
+  if (!session && input.sessionSnapshot?.id === id) {
+    session = {
+      id: input.sessionSnapshot.id,
+      bookingId: input.sessionSnapshot.bookingId,
+      provider: input.sessionSnapshot.provider || gatewayName,
+      method: input.sessionSnapshot.method || "card",
+      amount: input.sessionSnapshot.amount,
+      currency: input.sessionSnapshot.currency || "ZAR",
+      status: input.sessionSnapshot.status || "pending",
+      createdAt: input.sessionSnapshot.createdAt || new Date().toISOString(),
+      redirectUrl: input.sessionSnapshot.redirectUrl || `/gateway.html?sessionId=${id}`
+    };
+    const sessions = readPaymentSessions();
+    sessions.push(session);
+    writePaymentSessions(sessions);
+  }
+
   if (!session) return null;
 
   const booking = readBookings().find((item) => item.id === session.bookingId);
@@ -890,9 +963,24 @@ function getCheckoutSession(id) {
   };
 }
 
-async function confirmCheckoutSession(id) {
+async function confirmCheckoutSession(id, input = {}) {
   const sessions = readPaymentSessions();
-  const session = sessions.find((item) => item.id === id);
+  let session = sessions.find((item) => item.id === id);
+
+  if (!session && input.sessionSnapshot?.id === id) {
+    session = {
+      id: input.sessionSnapshot.id,
+      bookingId: input.sessionSnapshot.bookingId,
+      provider: input.sessionSnapshot.provider || gatewayName,
+      method: input.sessionSnapshot.method || "card",
+      amount: input.sessionSnapshot.amount,
+      currency: input.sessionSnapshot.currency || "ZAR",
+      status: input.sessionSnapshot.status || "pending",
+      createdAt: input.sessionSnapshot.createdAt || new Date().toISOString(),
+      redirectUrl: input.sessionSnapshot.redirectUrl || `/gateway.html?sessionId=${id}`
+    };
+    sessions.push(session);
+  }
 
   if (!session) return null;
 
@@ -905,7 +993,8 @@ async function confirmCheckoutSession(id) {
 
   const booking = await markBookingPaid(session.bookingId, {
     method: session.method,
-    reference: session.reference
+    reference: session.reference,
+    bookingSnapshot: input.bookingSnapshot
   });
 
   return {
@@ -946,6 +1035,19 @@ async function handleApi(request, response, pathname) {
 
     if (request.method === "GET" && pathname === "/api/bookings/current") {
       sendJson(response, 200, { booking: getCurrentBooking() });
+      return;
+    }
+
+    const bookingMatch = pathname.match(/^\/api\/bookings\/([^/]+)$/);
+    if (request.method === "GET" && bookingMatch) {
+      const booking = getBookingById(bookingMatch[1]);
+
+      if (!booking) {
+        sendJson(response, 404, { error: "Booking not found" });
+        return;
+      }
+
+      sendJson(response, 200, { booking });
       return;
     }
 
@@ -1018,7 +1120,8 @@ async function handleApi(request, response, pathname) {
 
     const checkoutConfirmMatch = pathname.match(/^\/api\/payments\/sessions\/([^/]+)\/confirm$/);
     if (request.method === "POST" && checkoutConfirmMatch) {
-      const session = await confirmCheckoutSession(checkoutConfirmMatch[1]);
+      const body = await readJsonBody(request);
+      const session = await confirmCheckoutSession(checkoutConfirmMatch[1], body);
 
       if (!session) {
         sendJson(response, 404, { error: "Payment session not found" });

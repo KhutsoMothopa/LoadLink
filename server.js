@@ -326,30 +326,52 @@ function calculateQuote(input) {
 }
 
 function nearestDriverFor(booking) {
-  const availableDrivers = readDrivers().filter((driver) =>
-    driver.available &&
-    driver.vehicleTypes.includes(booking.vehicleKey) &&
-    !booking.declinedDriverIds?.includes(driver.id)
-  );
+  const candidates = driverCandidatesFor(booking);
 
-  if (!availableDrivers.length) {
+  if (!candidates.length) {
     return null;
   }
 
-  const nearest = availableDrivers
+  return driverAssignmentPayload(candidates[0], booking);
+}
+
+function driverAssignmentPayload(driver, booking) {
+  return {
+    id: driver.id,
+    name: driver.name,
+    vehicle: booking.vehicle.label,
+    rating: driver.rating,
+    currentLocationLabel: driver.currentLocationLabel,
+    distanceToPickup: Number(driver.distanceToPickup.toFixed(1))
+  };
+}
+
+function driverCandidatesFor(booking) {
+  return readDrivers().filter((driver) =>
+    driver.available &&
+    driver.vehicleTypes.includes(booking.vehicleKey) &&
+    !booking.declinedDriverIds?.includes(driver.id)
+  )
     .map((driver) => ({
       ...driver,
       distanceToPickup: distanceKm({ lat: driver.lat, lng: driver.lng }, booking.pickup)
     }))
-    .sort((a, b) => a.distanceToPickup - b.distanceToPickup)[0];
+    .sort((a, b) => a.distanceToPickup - b.distanceToPickup);
+}
+
+function dispatcherViewForBooking(booking) {
+  const candidates = driverCandidatesFor(booking).map((driver) => ({
+    id: driver.id,
+    name: driver.name,
+    rating: driver.rating,
+    vehicleTypes: driver.vehicleTypes,
+    currentLocationLabel: driver.currentLocationLabel,
+    distanceToPickup: Number(driver.distanceToPickup.toFixed(1))
+  }));
 
   return {
-    id: nearest.id,
-    name: nearest.name,
-    vehicle: booking.vehicle.label,
-    rating: nearest.rating,
-    currentLocationLabel: nearest.currentLocationLabel,
-    distanceToPickup: Number(nearest.distanceToPickup.toFixed(1))
+    ...booking,
+    driverCandidates: candidates
   };
 }
 
@@ -696,17 +718,6 @@ function advanceBookingForCustomer(booking) {
 
   if (booking.status === "awaiting_payment") return booking;
 
-  const dispatchStart = booking.dispatcher?.searchStartedAt || booking.createdAt;
-  const ageSeconds = (Date.now() - new Date(dispatchStart).getTime()) / 1000;
-
-  if (ageSeconds >= 6 && booking.status === "dispatcher_notified") {
-    booking.assignedDriver = booking.assignedDriver || nearestDriverFor(booking);
-
-    if (booking.assignedDriver) {
-      pushStatus(booking, "driver_assigned");
-    }
-  }
-
   return booking;
 }
 
@@ -766,6 +777,70 @@ function updateBookingStatus(id, status) {
 
   writeBookings(bookings);
   return booking;
+}
+
+function listDispatcherRequests() {
+  const bookings = readBookings();
+  return bookings
+    .filter((booking) =>
+      booking.payment?.status === "paid" &&
+      booking.status !== "delivered"
+    )
+    .map(dispatcherViewForBooking)
+    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+}
+
+function listDispatcherDrivers() {
+  return readDrivers().map((driver) => ({
+    id: driver.id,
+    name: driver.name,
+    available: driver.available,
+    vehicleTypes: driver.vehicleTypes,
+    currentLocationKey: driver.currentLocationKey,
+    currentLocationLabel: driver.currentLocationLabel,
+    rating: driver.rating,
+    updatedAt: driver.updatedAt
+  }));
+}
+
+function assignDriverToBooking(id, driverId) {
+  const bookings = readBookings();
+  const booking = bookings.find((item) => item.id === id);
+
+  if (!booking) return null;
+
+  if (booking.payment?.status !== "paid") {
+    throw new Error("Payment must be confirmed before dispatch assignment");
+  }
+
+  if (!["dispatcher_notified", "driver_assigned"].includes(booking.status)) {
+    throw new Error("This request is not ready for dispatch assignment");
+  }
+
+  const candidates = driverCandidatesFor(booking);
+  const selected = driverId
+    ? candidates.find((driver) => driver.id === driverId)
+    : candidates[0];
+
+  if (!selected) {
+    throw new Error("No available driver matches this request");
+  }
+
+  booking.assignedDriver = driverAssignmentPayload(selected, booking);
+  booking.driverResponse = {
+    status: "pending",
+    at: new Date().toISOString(),
+    driverId: selected.id
+  };
+  booking.dispatcher = {
+    ...(booking.dispatcher || {}),
+    assignedAt: new Date().toISOString(),
+    assignedBy: "LoadLink Dispatch Desk"
+  };
+  pushStatus(booking, "driver_assigned", "dispatcher");
+
+  writeBookings(bookings);
+  return dispatcherViewForBooking(booking);
 }
 
 function listDriverJobs(driverId = activeDriverId) {
@@ -1054,6 +1129,30 @@ async function handleApi(request, response, pathname) {
     if (request.method === "DELETE" && pathname === "/api/bookings/current") {
       writeBookings([]);
       sendJson(response, 200, { ok: true });
+      return;
+    }
+
+    if (request.method === "GET" && pathname === "/api/dispatcher/requests") {
+      sendJson(response, 200, { requests: listDispatcherRequests() });
+      return;
+    }
+
+    if (request.method === "GET" && pathname === "/api/dispatcher/drivers") {
+      sendJson(response, 200, { drivers: listDispatcherDrivers() });
+      return;
+    }
+
+    const dispatcherAssignMatch = pathname.match(/^\/api\/dispatcher\/requests\/([^/]+)\/assign$/);
+    if (request.method === "POST" && dispatcherAssignMatch) {
+      const body = await readJsonBody(request);
+      const booking = assignDriverToBooking(dispatcherAssignMatch[1], body.driverId);
+
+      if (!booking) {
+        sendJson(response, 404, { error: "Request not found" });
+        return;
+      }
+
+      sendJson(response, 200, { booking });
       return;
     }
 

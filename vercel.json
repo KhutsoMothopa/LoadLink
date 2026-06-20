@@ -11,6 +11,10 @@
       "destination": "/driver.html"
     },
     {
+      "source": "/dispatcher",
+      "destination": "/dispatcher.html"
+    },
+    {
       "source": "/tracking",
       "destination": "/tracking.html"
     },

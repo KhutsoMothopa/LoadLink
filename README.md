@@ -13,6 +13,7 @@ Customer website for a bakkie and truck courier marketplace. LoadLink lets custo
 - Dispatcher email notification after confirmed payment
 - Dedicated customer tracking page
 - Separate driver website for assigned job responses
+- Separate dispatcher website for assigning paid requests to available drivers
 - Driver availability and current-area updates for dispatch assignment
 - Driver earnings summary for week, month, and year
 - Dispatcher notification and nearest-driver assignment simulation
@@ -67,11 +68,18 @@ Driver jobs are available at:
 http://127.0.0.1:4173/driver.html
 ```
 
+Dispatcher operations are available at:
+
+```text
+http://127.0.0.1:4173/dispatcher.html
+```
+
 Production routes on Vercel:
 
 ```text
 https://www.load-link.co.za/
 https://www.load-link.co.za/driver
+https://www.load-link.co.za/dispatcher
 https://www.load-link.co.za/tracking
 https://www.load-link.co.za/payment
 ```
@@ -120,6 +128,9 @@ The next milestone should connect the geocoding foundation to a real mapping pro
 - `GET /api/driver/profile`
 - `PATCH /api/driver/profile`
 - `GET /api/driver/earnings?period=week|month|year`
+- `GET /api/dispatcher/requests`
+- `GET /api/dispatcher/drivers`
+- `POST /api/dispatcher/requests/:id/assign`
 
 ## Internal foundation routes
 

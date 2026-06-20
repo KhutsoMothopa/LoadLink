@@ -726,11 +726,29 @@ a:focus-visible {
   gap: 18px;
 }
 
+.dispatcher-request-list,
+.dispatcher-driver-list {
+  display: grid;
+  gap: 18px;
+}
+
 .driver-job-card {
   padding: 20px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #f8fafc;
+}
+
+.dispatcher-assignment-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: end;
+  margin-top: 22px;
+}
+
+.dispatcher-assignment-row label {
+  min-width: 0;
 }
 
 .driver-job-topline {
@@ -881,6 +899,7 @@ a:focus-visible {
   .customer-grid,
   .tracking-layout,
   .driver-dashboard,
+  .dispatcher-assignment-row,
   .roadmap-section {
     grid-template-columns: 1fr;
   }

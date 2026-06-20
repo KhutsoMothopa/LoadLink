@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LoadLink | Dispatch Desk</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="dispatcher.html" aria-label="LoadLink dispatch home">
+        <span class="brand-mark">LL</span>
+        <span>
+          <strong>LoadLink</strong>
+          <small>Dispatch desk</small>
+        </span>
+      </a>
+      <nav class="desktop-nav" aria-label="Dispatch navigation">
+        <a href="#requests">Requests</a>
+        <a href="#drivers">Drivers</a>
+      </nav>
+      <button class="header-action" type="button" id="refreshDispatchBtn">Refresh desk</button>
+    </header>
+
+    <main class="tracking-page">
+      <section class="tracking-hero" aria-labelledby="dispatcher-title">
+        <p class="eyebrow">Dispatcher website</p>
+        <h1 id="dispatcher-title">Assign paid requests to the nearest reliable driver</h1>
+        <p id="dispatcherIntro">Paid customer requests arrive here for dispatcher review. Assign a suitable available driver, then the driver can accept and update the trip.</p>
+      </section>
+
+      <section class="driver-workspace">
+        <section class="product-panel" id="requests">
+          <div class="panel-heading">
+            <div>
+              <p class="section-kicker">Paid requests</p>
+              <h2>Dispatch queue</h2>
+            </div>
+            <span class="status-pill neutral" id="dispatcherQueueStatus">Loading</span>
+          </div>
+
+          <div class="dispatcher-request-list" id="dispatcherRequestList">
+            <p class="fine-print">Loading paid requests...</p>
+          </div>
+        </section>
+
+        <section class="product-panel dispatcher-drivers-panel" id="drivers">
+          <div class="panel-heading">
+            <div>
+              <p class="section-kicker">Driver network</p>
+              <h2>Availability board</h2>
+            </div>
+            <span class="status-pill neutral" id="dispatcherDriverStatus">Loading</span>
+          </div>
+
+          <div class="dispatcher-driver-list" id="dispatcherDriverList">
+            <p class="fine-print">Loading available drivers...</p>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div>
+        <strong>LoadLink Dispatch</strong>
+        <p>Operational desk for reviewing paid requests and assigning suitable nearby drivers.</p>
+      </div>
+      <a href="#requests">Review requests</a>
+    </footer>
+
+    <script src="dispatcher.js"></script>
+  </body>
+</html>

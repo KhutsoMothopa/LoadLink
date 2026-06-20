@@ -696,6 +696,17 @@ function restoreBookingFromSnapshot(snapshot) {
   booking.createdAt = snapshot.createdAt || booking.createdAt;
   booking.updatedAt = new Date().toISOString();
   booking.statusHistory = [{ status: "awaiting_payment", at: booking.createdAt, actor: "customer" }];
+
+  if (snapshot.payment) booking.payment = snapshot.payment;
+  if (snapshot.dispatcher) booking.dispatcher = snapshot.dispatcher;
+  if (snapshot.status) booking.status = snapshot.status;
+  if (snapshot.assignedDriver !== undefined) booking.assignedDriver = snapshot.assignedDriver;
+  if (snapshot.driverResponse) booking.driverResponse = snapshot.driverResponse;
+  if (Array.isArray(snapshot.declinedDriverIds)) booking.declinedDriverIds = snapshot.declinedDriverIds;
+  if (Array.isArray(snapshot.statusHistory) && snapshot.statusHistory.length) {
+    booking.statusHistory = snapshot.statusHistory;
+  }
+
   return booking;
 }
 
@@ -803,9 +814,14 @@ function listDispatcherDrivers() {
   }));
 }
 
-function assignDriverToBooking(id, driverId) {
+function assignDriverToBooking(id, driverId, bookingSnapshot = null) {
   const bookings = readBookings();
-  const booking = bookings.find((item) => item.id === id);
+  let booking = bookings.find((item) => item.id === id);
+
+  if (!booking && bookingSnapshot?.id === id) {
+    booking = restoreBookingFromSnapshot(bookingSnapshot);
+    bookings.push(booking);
+  }
 
   if (!booking) return null;
 
@@ -1145,7 +1161,7 @@ async function handleApi(request, response, pathname) {
     const dispatcherAssignMatch = pathname.match(/^\/api\/dispatcher\/requests\/([^/]+)\/assign$/);
     if (request.method === "POST" && dispatcherAssignMatch) {
       const body = await readJsonBody(request);
-      const booking = assignDriverToBooking(dispatcherAssignMatch[1], body.driverId);
+      const booking = assignDriverToBooking(dispatcherAssignMatch[1], body.driverId, body.bookingSnapshot);
 
       if (!booking) {
         sendJson(response, 404, { error: "Request not found" });

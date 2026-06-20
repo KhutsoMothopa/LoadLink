@@ -1,6 +1,7 @@
 (function () {
   const bookingsKey = "loadlinkOperationalBookings";
   const driversKey = "loadlinkOperationalDrivers";
+  const activeBookingKey = "loadlinkActiveBooking";
   const activeDriverId = "DRV-101";
 
   const locations = {
@@ -65,8 +66,40 @@
     return drivers.find((driver) => driver.id === profile.id);
   }
 
-  function getBookings() {
+  function storedBookings() {
     return readJson(bookingsKey, []);
+  }
+
+  function activeSessionBooking() {
+    try {
+      const booking = JSON.parse(window.sessionStorage.getItem(activeBookingKey) || "null");
+      return booking?.id ? booking : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function getBookings() {
+    const bookings = storedBookings();
+    const activeBooking = activeSessionBooking();
+
+    if (!activeBooking) return bookings;
+
+    const index = bookings.findIndex((item) => item.id === activeBooking.id);
+
+    if (index >= 0) {
+      const storedTime = new Date(bookings[index].updatedAt || bookings[index].createdAt || 0).getTime();
+      const activeTime = new Date(activeBooking.updatedAt || activeBooking.createdAt || 0).getTime();
+
+      if (activeTime > storedTime) {
+        bookings[index] = { ...bookings[index], ...activeBooking };
+      }
+    } else {
+      bookings.push(activeBooking);
+    }
+
+    saveBookings(bookings);
+    return bookings;
   }
 
   function saveBookings(bookings) {
@@ -76,7 +109,7 @@
   function saveBooking(booking) {
     if (!booking?.id) return null;
 
-    const bookings = getBookings();
+    const bookings = storedBookings();
     const index = bookings.findIndex((item) => item.id === booking.id);
 
     if (index >= 0) {

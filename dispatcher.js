@@ -3,6 +3,7 @@ const dispatcherDriverList = document.querySelector("#dispatcherDriverList");
 const refreshDispatchBtn = document.querySelector("#refreshDispatchBtn");
 let isLoadingDispatcher = false;
 let isAssigningRequest = false;
+const dispatcherRequests = new Map();
 
 const statusLabels = {
   dispatcher_notified: "Ready for assignment",
@@ -108,6 +109,8 @@ function requestCard(request) {
 
 function renderRequests(requests) {
   const openRequests = requests.filter((request) => request.status === "dispatcher_notified");
+  dispatcherRequests.clear();
+  requests.forEach((request) => dispatcherRequests.set(request.id, request));
 
   if (!requests.length) {
     setStatus("#dispatcherQueueStatus", "No paid requests", "neutral");
@@ -217,6 +220,7 @@ async function assignRequest(requestId) {
   const select = document.querySelector(`[data-driver-select="${requestId}"]`);
   const driverId = select?.value || null;
   const button = document.querySelector(`[data-action="assign"][data-request="${requestId}"]`);
+  const bookingSnapshot = dispatcherRequests.get(requestId);
 
   isAssigningRequest = true;
   if (button) {
@@ -228,7 +232,7 @@ async function assignRequest(requestId) {
   try {
     const payload = await apiRequest(`/api/dispatcher/requests/${requestId}/assign`, {
       method: "POST",
-      body: JSON.stringify({ driverId })
+      body: JSON.stringify({ driverId, bookingSnapshot })
     });
 
     window.LoadLinkOps?.saveBooking(payload.booking);

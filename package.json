@@ -2,7 +2,7 @@
   "name": "loadlink-courier-website",
   "version": "0.1.0",
   "private": true,
-  "description": "Prototype website for a bakkie and truck courier e-hailing platform.",
+  "description": "Customer and driver platform for a bakkie and truck courier marketplace.",
   "scripts": {
     "start": "node server.js"
   }

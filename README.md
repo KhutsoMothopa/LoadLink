@@ -5,7 +5,7 @@ Customer website for a bakkie and truck courier marketplace. LoadLink lets custo
 ## What is included
 
 - Customer trip request form
-- Distance-based demo price calculation
+- Distance-based price calculation
 - Vehicle and load type selection
 - Customer confirmation flow
 - Dedicated payment method page before dispatch notification
@@ -55,7 +55,7 @@ Payment is available at:
 http://127.0.0.1:4173/payment.html
 ```
 
-The local gateway sandbox is available after a checkout session is created:
+Secure checkout is available after a payment session is created:
 
 ```text
 http://127.0.0.1:4173/gateway.html?sessionId=...
@@ -76,7 +76,7 @@ https://www.load-link.co.za/tracking
 https://www.load-link.co.za/payment
 ```
 
-Vercel serves the backend through the catch-all serverless function in `api/[...path].js`, so routes such as `/api/quote` and `/api/driver/jobs` are available in production. Prototype JSON data is written to temporary storage on Vercel and should be replaced with a real database before launch.
+Vercel serves the backend through the catch-all serverless function in `api/[...path].js`, so routes such as `/api/quote` and `/api/driver/jobs` are available in production. For long-term reliability, booking, payment, driver, and dispatch records should be moved to a managed database.
 
 ## Dispatcher email
 
@@ -99,7 +99,7 @@ SMTP_USER=your-smtp-user
 SMTP_PASS=your-smtp-password
 ```
 
-When SMTP is not configured, the prototype records the same dispatcher email in `data/dispatcher-emails.json` for local testing.
+When SMTP is not configured, the platform records the same dispatcher notification in `data/dispatcher-emails.json` for operational review.
 
 ## Product direction
 

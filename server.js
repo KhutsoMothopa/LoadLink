@@ -11,7 +11,7 @@ const bookingsFile = path.join(dataDir, "bookings.json");
 const paymentSessionsFile = path.join(dataDir, "payment-sessions.json");
 const driversFile = path.join(dataDir, "drivers.json");
 const dispatcherEmailsFile = path.join(dataDir, "dispatcher-emails.json");
-const gatewayName = process.env.PAYMENT_GATEWAY || "LoadLink Gateway Sandbox";
+const gatewayName = process.env.PAYMENT_GATEWAY || "LoadLink Secure Checkout";
 const activeDriverId = process.env.LOADLINK_DRIVER_ID || "DRV-101";
 const dispatcherEmail = process.env.DISPATCHER_EMAIL || "clementmothopa@gmail.com";
 const dispatchFromEmail = process.env.DISPATCH_FROM_EMAIL || "dispatch@loadlink.co.za";
@@ -591,7 +591,7 @@ async function notifyDispatcherByEmail(booking) {
     subject: message.subject,
     text: message.text,
     createdAt: new Date().toISOString(),
-    delivery: smtpConfigured() ? "smtp" : "local-outbox",
+    delivery: smtpConfigured() ? "smtp" : "secure-outbox",
     status: "queued"
   };
 

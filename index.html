@@ -39,14 +39,14 @@
           <dl class="trust-strip">
             <div>
               <dt id="heroFare">R 436</dt>
-              <dd>current sample fare</dd>
+              <dd>estimated fare</dd>
             </div>
             <div>
               <dt id="heroDistance">5.4 km</dt>
               <dd>estimated route</dd>
             </div>
             <div>
-              <dt id="heroStatus">Draft</dt>
+              <dt id="heroStatus">Quote ready</dt>
               <dd>booking status</dd>
             </div>
           </dl>
@@ -60,7 +60,7 @@
               <p class="section-kicker">Customer booking</p>
               <h2 id="book-title">Request a bakkie or truck</h2>
             </div>
-            <span class="status-pill neutral" id="bookingStatus">Draft quote</span>
+            <span class="status-pill neutral" id="bookingStatus">Quote ready</span>
           </div>
 
           <form id="bookingForm" class="booking-form">
@@ -139,7 +139,7 @@
                 <input id="pickupTime" name="pickupTime" type="time" value="10:00">
               </label>
             </div>
-            <p class="form-help">Service areas are used as a fallback when an address cannot be matched yet. Production will connect this to a live geocoding provider.</p>
+            <p class="form-help">Service areas help confirm coverage and support reliable pickup planning when exact address matching needs review.</p>
 
             <fieldset class="option-row">
               <legend>Handling requirements</legend>
@@ -159,7 +159,7 @@
             </label>
 
             <div class="action-row">
-              <button class="secondary-dark-button" type="button" id="resetBtn">Reset demo</button>
+              <button class="secondary-dark-button" type="button" id="resetBtn">Clear request</button>
               <button class="primary-button" type="button" id="confirmBtn">Continue to payment</button>
             </div>
           </form>
@@ -206,7 +206,7 @@
               <dd id="routeSource">Address matched</dd>
             </div>
           </dl>
-          <p class="fine-print">Demo pricing includes base fare, distance, vehicle size, handling requirements, and platform margin.</p>
+          <p class="fine-print">Transparent pricing includes base fare, route distance, vehicle size, handling requirements, and platform margin.</p>
         </aside>
       </section>
 

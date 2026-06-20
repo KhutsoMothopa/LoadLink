@@ -1,5 +1,5 @@
 const statusMap = {
-  draft: { customer: "Draft quote", className: "neutral" },
+  draft: { customer: "Quote ready", className: "neutral" },
   awaiting_payment: { customer: "Awaiting payment", className: "warning" },
   dispatcher_notified: { customer: "Request sent", className: "warning" },
   driver_assigned: { customer: "Driver accepted", className: "active" },
@@ -163,7 +163,7 @@ async function confirmBooking() {
   }
 }
 
-async function resetDemo() {
+async function clearRequest() {
   activeTrip = null;
   draftQuote = null;
 
@@ -187,7 +187,7 @@ async function resetDemo() {
 form.addEventListener("change", refreshDraft);
 form.addEventListener("input", refreshDraft);
 confirmBtn.addEventListener("click", confirmBooking);
-resetBtn.addEventListener("click", resetDemo);
+resetBtn.addEventListener("click", clearRequest);
 
 confirmBtn.textContent = "Continue to payment";
 form.pickupDate.value = form.pickupDate.value || todayIsoDate();

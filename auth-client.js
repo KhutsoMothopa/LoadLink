@@ -115,6 +115,15 @@
     return ensureProfile(data.user);
   }
 
+  function emailConfirmationRedirectUrl() {
+    const productionConfirmUrl = "https://www.load-link.co.za/auth?open=login&verified=email";
+    const localConfirmUrl = `${window.location.origin}/auth.html?open=login&verified=email`;
+
+    return window.location.hostname.endsWith("load-link.co.za")
+      ? productionConfirmUrl
+      : localConfirmUrl;
+  }
+
   async function ensureProfile(user) {
     if (!user?.id) return null;
 
@@ -169,11 +178,7 @@
 
   async function signUp({ role, fullName, email, phone, password, driver }) {
     const supabase = await client();
-    const productionConfirmUrl = "https://www.load-link.co.za/auth?open=login&verified=email";
-    const localConfirmUrl = `${window.location.origin}/auth.html?open=login&verified=email`;
-    const emailRedirectTo = window.location.hostname.endsWith("load-link.co.za")
-      ? productionConfirmUrl
-      : localConfirmUrl;
+    const emailRedirectTo = emailConfirmationRedirectUrl();
 
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -246,6 +251,19 @@
     return profile;
   }
 
+  async function resendEmailVerification(email) {
+    const supabase = await client();
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: {
+        emailRedirectTo: emailConfirmationRedirectUrl()
+      }
+    });
+
+    if (error) throw error;
+  }
+
   async function requestPasswordReset(email) {
     const supabase = await client();
     const productionResetUrl = "https://www.load-link.co.za/auth?mode=reset";
@@ -285,6 +303,7 @@
     currentProfile,
     signIn,
     signUp,
+    resendEmailVerification,
     requestPasswordReset,
     updatePassword,
     signOut,

@@ -50,8 +50,10 @@ const passwordInput = document.querySelector("#password");
 const passwordToggle = document.querySelector("#passwordToggle");
 const passwordFieldLabel = document.querySelector("#passwordFieldLabel");
 const forgotPasswordBtn = document.querySelector("#forgotPasswordBtn");
+const resendVerificationBtn = document.querySelector("#resendVerificationBtn");
 
 let mode = "login";
+let pendingVerificationEmail = "";
 
 function setStatus(label, className = "neutral") {
   authStatus.textContent = label;
@@ -85,6 +87,7 @@ function setMode(nextMode) {
   if (loginModeBtn) loginModeBtn.className = registering ? "secondary-dark-button" : "primary-button";
   if (registerModeBtn) registerModeBtn.className = registering ? "primary-button" : "secondary-dark-button";
   if (forgotPasswordBtn) forgotPasswordBtn.hidden = registering || resetting;
+  if (resendVerificationBtn) resendVerificationBtn.hidden = !pendingVerificationEmail || registering || resetting;
 
   authHelp.textContent = resetting
     ? "Enter a new password for your LoadLink account."
@@ -169,6 +172,32 @@ async function handlePasswordResetRequest() {
   }
 }
 
+async function handleResendVerification() {
+  const email = pendingVerificationEmail || formValue("email");
+
+  if (!email) {
+    setStatus("Email required", "warning");
+    authHelp.textContent = "Enter the email address you registered with, then resend the verification email.";
+    document.querySelector("#email")?.focus();
+    return;
+  }
+
+  resendVerificationBtn.disabled = true;
+  setStatus("Sending verification", "warning");
+
+  try {
+    await window.LoadLinkAuth.resendEmailVerification(email);
+    pendingVerificationEmail = email;
+    setStatus("Verification email sent", "active");
+    authHelp.textContent = "If the email address is linked to a pending account, a new verification link has been sent.";
+  } catch (error) {
+    setStatus("Verification unavailable", "warning");
+    authHelp.textContent = error.message || "Verification email could not be sent right now.";
+  } finally {
+    resendVerificationBtn.disabled = false;
+  }
+}
+
 function openAuth(nextMode = "login", nextRole = selectedRole) {
   updateRole(nextRole);
 
@@ -210,6 +239,8 @@ async function checkSetup() {
   }
 
   if (params.get("verified") === "email") {
+    pendingVerificationEmail = "";
+    if (resendVerificationBtn) resendVerificationBtn.hidden = true;
     setStatus("Email verified", "active");
     authHelp.textContent = "Your email has been verified. You can now log in to your LoadLink account.";
   }
@@ -276,9 +307,11 @@ async function handleSubmit(event) {
     }
 
     if (profile.pendingEmailVerification) {
+      pendingVerificationEmail = profile.email || email;
+      setMode("login");
       setStatus("Verify email", "warning");
       authHelp.textContent = "We sent a verification link to your email address. Confirm your email, then return here to log in.";
-      setMode("login");
+      if (resendVerificationBtn) resendVerificationBtn.hidden = false;
       return;
     }
 
@@ -335,5 +368,6 @@ passwordToggle?.addEventListener("click", () => {
 loginModeBtn?.addEventListener("click", () => setMode("login"));
 registerModeBtn?.addEventListener("click", () => setMode("register"));
 forgotPasswordBtn?.addEventListener("click", handlePasswordResetRequest);
+resendVerificationBtn?.addEventListener("click", handleResendVerification);
 authForm.addEventListener("submit", handleSubmit);
 checkSetup();

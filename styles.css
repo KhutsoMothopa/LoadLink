@@ -163,11 +163,15 @@ button {
 }
 
 .header-text-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   border: 0;
   padding: 0;
   background: transparent;
   color: var(--ink);
   font-weight: 900;
+  line-height: 1;
 }
 
 .header-text-action:hover {
@@ -177,6 +181,63 @@ button {
 .header-text-action:disabled {
   cursor: wait;
   opacity: 0.55;
+}
+
+.header-action-icon {
+  position: relative;
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+}
+
+.refresh-icon {
+  border: 2px solid currentColor;
+  border-left-color: transparent;
+  border-radius: 999px;
+}
+
+.refresh-icon::after {
+  content: "";
+  position: absolute;
+  top: -3px;
+  right: 0;
+  width: 5px;
+  height: 5px;
+  border-top: 2px solid currentColor;
+  border-right: 2px solid currentColor;
+  transform: rotate(45deg);
+}
+
+.logout-icon {
+  background:
+    linear-gradient(currentColor, currentColor) 7px 7px / 9px 2px no-repeat;
+}
+
+.logout-icon::before,
+.logout-icon::after {
+  content: "";
+  position: absolute;
+}
+
+.logout-icon::before {
+  left: 0;
+  top: 2px;
+  width: 8px;
+  height: 12px;
+  border: 2px solid currentColor;
+  border-right: 0;
+  border-radius: 2px 0 0 2px;
+}
+
+.logout-icon::after {
+  right: 0;
+  top: 4px;
+  width: 6px;
+  height: 6px;
+  border-top: 2px solid currentColor;
+  border-right: 2px solid currentColor;
+  transform: rotate(45deg);
 }
 
 .auth-utility-nav {

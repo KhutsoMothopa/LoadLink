@@ -10,10 +10,16 @@ const roleLabels = {
   dispatcher: "Dispatcher"
 };
 
+const roleHeroTitles = {
+  customer: "Move your goods with trusted transport support.",
+  driver: "Manage your work, availability, and earnings.",
+  dispatcher: "Run paid requests from one secure operations desk."
+};
+
 const roleCopy = {
-  customer: "Login or create a customer account to request vehicles and track deliveries.",
+  customer: "Login or create a customer account to request vehicles, pay securely, and track deliveries from collection to drop-off.",
   driver: "Login or register a driver profile for approval, availability, assigned jobs, and earnings.",
-  dispatcher: "Dispatcher access is private. Login with the approved operations account."
+  dispatcher: "Dispatcher access is private. Login with the approved operations account to assign requests and monitor job progress."
 };
 
 const authForm = document.querySelector("#authForm");
@@ -25,6 +31,7 @@ const loginModeBtn = document.querySelector("#loginModeBtn");
 const registerModeBtn = document.querySelector("#registerModeBtn");
 const profileFields = document.querySelector("#profileFields");
 const driverFields = document.querySelector("#driverFields");
+const roleCards = document.querySelectorAll("[data-role-card]");
 
 let mode = "login";
 
@@ -59,8 +66,12 @@ function formValue(id) {
 
 async function checkSetup() {
   document.querySelector("#authEyebrow").textContent = `${roleLabels[selectedRole]} access`;
-  document.querySelector("#auth-title").textContent = `${roleLabels[selectedRole]} secure access`;
+  document.querySelector("#auth-title").textContent = roleHeroTitles[selectedRole];
   document.querySelector("#authIntro").textContent = roleCopy[selectedRole];
+  document.body.dataset.authRole = selectedRole;
+  roleCards.forEach((card) => {
+    card.classList.toggle("active", card.dataset.roleCard === selectedRole);
+  });
   setMode("login");
 
   try {

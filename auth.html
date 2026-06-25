@@ -23,15 +23,54 @@
       <a class="header-action" href="index.html">Back to site</a>
     </header>
 
-    <main class="tracking-page auth-page">
-      <section class="tracking-hero" aria-labelledby="auth-title">
-        <p class="eyebrow" id="authEyebrow">Secure account</p>
-        <h1 id="auth-title">Sign in to continue</h1>
-        <p id="authIntro">Protected access keeps customer requests, driver records, and dispatcher operations private.</p>
+    <main class="auth-page">
+      <section class="auth-hero" aria-labelledby="auth-title">
+        <div class="auth-hero-copy">
+          <p class="eyebrow" id="authEyebrow">Secure account</p>
+          <h1 id="auth-title">Sign in to continue</h1>
+          <p id="authIntro">Protected access keeps customer requests, driver records, and dispatcher operations private.</p>
+
+          <div class="auth-paths" aria-label="Choose access type">
+            <a class="auth-path-card" href="auth.html?role=customer" data-role-card="customer">
+              <span>Customer</span>
+              <strong>Book a vehicle</strong>
+              <small>Request a bakkie or truck, pay securely, and track your delivery.</small>
+            </a>
+            <a class="auth-path-card" href="auth.html?role=driver" data-role-card="driver">
+              <span>Driver</span>
+              <strong>Drive and earn</strong>
+              <small>Share availability, receive assigned work, and manage trip earnings.</small>
+            </a>
+            <a class="auth-path-card" href="auth.html?role=dispatcher" data-role-card="dispatcher">
+              <span>Dispatcher</span>
+              <strong>Control operations</strong>
+              <small>Assign paid requests to approved drivers and monitor progress.</small>
+            </a>
+          </div>
+        </div>
+
+        <aside class="auth-hero-panel" aria-label="Platform assurance">
+          <p class="section-kicker">Reliable movement</p>
+          <h2>Every trip starts with verified access.</h2>
+          <dl>
+            <div>
+              <dt>Protected</dt>
+              <dd>Role-based accounts</dd>
+            </div>
+            <div>
+              <dt>Traceable</dt>
+              <dd>Bookings and job status</dd>
+            </div>
+            <div>
+              <dt>Operational</dt>
+              <dd>Dispatcher-led assignments</dd>
+            </div>
+          </dl>
+        </aside>
       </section>
 
-      <section class="auth-layout">
-        <section class="product-panel">
+      <section class="auth-layout" aria-label="Account form">
+        <section class="product-panel auth-card">
           <div class="panel-heading">
             <div>
               <p class="section-kicker">Account access</p>
@@ -97,9 +136,9 @@
           </form>
         </section>
 
-        <aside class="product-panel">
+        <aside class="product-panel auth-security-card">
           <p class="section-kicker">Security model</p>
-          <h2>Role-protected platforms</h2>
+          <h2>Access built around trust</h2>
           <dl class="ops-summary auth-summary">
             <div>
               <dt>Customers</dt>
@@ -118,7 +157,7 @@
               <dd>Supabase with RLS</dd>
             </div>
           </dl>
-          <p class="fine-print">Once Supabase environment variables are set, this page creates authenticated profiles and separates access by role.</p>
+          <p class="fine-print">Each platform only shows the records linked to the signed-in account. Dispatcher access stays private for approved operations users.</p>
         </aside>
       </section>
     </main>

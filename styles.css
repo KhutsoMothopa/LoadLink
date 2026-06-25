@@ -647,8 +647,123 @@ a:focus-visible {
   margin-top: 20px;
 }
 
-.auth-page .tracking-hero {
-  padding-bottom: 24px;
+.auth-page {
+  background:
+    linear-gradient(90deg, rgba(17, 24, 39, 0.92), rgba(17, 24, 39, 0.74) 52%, rgba(17, 24, 39, 0.36)),
+    url("https://images.unsplash.com/photo-1519003722824-194d4455a60c?auto=format&fit=crop&w=1800&q=80") center / cover;
+}
+
+.auth-hero {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 74px clamp(16px, 5vw, 72px) 36px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(320px, 0.88fr);
+  gap: 32px;
+  align-items: end;
+  min-height: 560px;
+  color: #fff;
+}
+
+.auth-hero-copy h1 {
+  max-width: 760px;
+  margin: 0;
+  font-size: clamp(2.55rem, 5vw, 5rem);
+  line-height: 0.98;
+}
+
+.auth-hero-copy p:last-of-type {
+  max-width: 660px;
+  margin: 24px 0 0;
+  color: #dbe3ee;
+  font-size: 1.08rem;
+  line-height: 1.7;
+}
+
+.auth-paths {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 38px;
+}
+
+.auth-path-card {
+  min-height: 168px;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.auth-path-card:hover,
+.auth-path-card.active {
+  transform: translateY(-2px);
+  border-color: rgba(184, 135, 70, 0.9);
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.auth-path-card span {
+  color: var(--accent);
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.auth-path-card strong {
+  margin-top: 14px;
+  font-size: 1.2rem;
+}
+
+.auth-path-card small {
+  margin-top: 10px;
+  color: #d7dde6;
+  line-height: 1.5;
+}
+
+.auth-hero-panel {
+  padding: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(14px);
+}
+
+.auth-hero-panel h2 {
+  margin: 0;
+  font-size: clamp(1.6rem, 3vw, 2.5rem);
+  line-height: 1.08;
+}
+
+.auth-hero-panel dl {
+  display: grid;
+  gap: 12px;
+  margin: 28px 0 0;
+}
+
+.auth-hero-panel div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.auth-hero-panel dt {
+  color: #fff;
+  font-weight: 900;
+}
+
+.auth-hero-panel dd {
+  margin: 0;
+  color: #d7dde6;
+  text-align: right;
 }
 
 .auth-layout {
@@ -659,6 +774,11 @@ a:focus-visible {
   grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
   gap: 24px;
   align-items: start;
+}
+
+.auth-card,
+.auth-security-card {
+  box-shadow: 0 24px 70px rgba(17, 24, 39, 0.22);
 }
 
 .auth-mode-row {
@@ -999,6 +1119,7 @@ a:focus-visible {
   .console-grid,
   .customer-grid,
   .tracking-layout,
+  .auth-hero,
   .auth-layout,
   .legal-layout,
   .driver-dashboard,
@@ -1049,9 +1170,24 @@ a:focus-visible {
   }
 
   .trust-strip,
+  .auth-paths,
   .field-grid,
   .roadmap-list {
     grid-template-columns: 1fr;
+  }
+
+  .auth-hero {
+    min-height: auto;
+    padding-top: 54px;
+  }
+
+  .auth-hero-panel div {
+    display: block;
+  }
+
+  .auth-hero-panel dd {
+    margin-top: 6px;
+    text-align: left;
   }
 
   .workspace,

@@ -1072,12 +1072,12 @@ body.auth-modal-open {
 
 .auth-close-button {
   display: grid;
-  width: 38px;
-  height: 38px;
+  width: 34px;
+  height: 34px;
   place-items: center;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: #fff;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
   color: var(--ink);
   font-size: 1.25rem;
   font-weight: 900;
@@ -1085,7 +1085,7 @@ body.auth-modal-open {
 }
 
 .auth-close-button:hover {
-  border-color: var(--steel);
+  background: #f1f5f9;
 }
 
 .auth-form {
@@ -1112,18 +1112,18 @@ body.auth-modal-open {
   top: 50%;
   right: 10px;
   display: grid;
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   place-items: center;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: #fff;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
   color: var(--steel-dark);
   transform: translateY(-50%);
 }
 
 .password-toggle:hover {
-  border-color: var(--steel);
+  background: #f1f5f9;
 }
 
 .eye-icon {

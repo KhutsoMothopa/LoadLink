@@ -65,6 +65,16 @@ function setAccessFailed(message = "The login details do not match this access a
   authHelp.textContent = message;
 }
 
+function setLoginFailed(email) {
+  pendingVerificationEmail = email || "";
+  setAccessFailed(
+    pendingVerificationEmail
+      ? "The login details could not be confirmed. If this account was created recently, verify the email address or resend the verification email."
+      : "The login details do not match this access area."
+  );
+  if (resendVerificationBtn) resendVerificationBtn.hidden = !pendingVerificationEmail;
+}
+
 function setMode(nextMode) {
   mode = nextMode === "reset" ? "reset" : selectedRole === "dispatcher" ? "login" : nextMode;
   const registering = mode === "register";
@@ -189,7 +199,7 @@ async function handleResendVerification() {
     await window.LoadLinkAuth.resendEmailVerification(email);
     pendingVerificationEmail = email;
     setStatus("Verification email sent", "active");
-    authHelp.textContent = "If the email address is linked to a pending account, a new verification link has been sent.";
+    authHelp.textContent = "If the email address is linked to a pending account, a new verification link has been sent. Check Inbox, Spam, Promotions, and All Mail.";
   } catch (error) {
     setStatus("Verification unavailable", "warning");
     authHelp.textContent = error.message || "Verification email could not be sent right now.";
@@ -324,7 +334,11 @@ async function handleSubmit(event) {
     setStatus("Access granted", "active");
     window.location.href = nextPathForRole(selectedRole);
   } catch (error) {
-    setAccessFailed(error.message);
+    if (mode === "login") {
+      setLoginFailed(formValue("email"));
+    } else {
+      setAccessFailed();
+    }
   } finally {
     submitAuthBtn.disabled = false;
   }

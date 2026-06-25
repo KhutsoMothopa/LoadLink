@@ -43,6 +43,8 @@ const authMenuTriggers = document.querySelectorAll("[data-auth-menu-trigger]");
 const authMenuPanels = document.querySelectorAll("[data-auth-menu-panel]");
 const authRoleOpeners = document.querySelectorAll("[data-auth-role-open]");
 const authCloseBtn = document.querySelector("#authCloseBtn");
+const passwordInput = document.querySelector("#password");
+const passwordToggle = document.querySelector("#passwordToggle");
 
 let mode = "login";
 
@@ -233,6 +235,14 @@ document.addEventListener("click", (event) => {
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !authModal.hidden) closeAuth();
   if (event.key === "Escape") closeAuthMenus();
+});
+
+passwordToggle?.addEventListener("click", () => {
+  const showingPassword = passwordInput.type === "text";
+  passwordInput.type = showingPassword ? "password" : "text";
+  passwordToggle.textContent = showingPassword ? "Show" : "Hide";
+  passwordToggle.setAttribute("aria-label", showingPassword ? "Show password" : "Hide password");
+  passwordToggle.setAttribute("aria-pressed", String(!showingPassword));
 });
 
 loginModeBtn?.addEventListener("click", () => setMode("login"));

@@ -163,7 +163,10 @@
               </label>
               <label>
                 <span>Password</span>
-                <input id="password" name="password" type="password" autocomplete="current-password" required>
+                <span class="password-control">
+                  <input id="password" name="password" type="password" autocomplete="current-password" required>
+                  <button class="password-toggle" type="button" id="passwordToggle" aria-label="Show password" aria-pressed="false">Show</button>
+                </span>
               </label>
             </div>
 
@@ -202,7 +205,7 @@
               </label>
             </div>
 
-            <button class="primary-button payment-submit" type="submit" id="submitAuthBtn">Login</button>
+            <button class="primary-button auth-submit-button payment-submit" type="submit" id="submitAuthBtn">Login</button>
             <p class="fine-print" id="authHelp">Dispatcher accounts are created privately by the platform owner and cannot self-register here.</p>
           </form>
         </section>

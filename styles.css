@@ -568,6 +568,8 @@ textarea {
   border-radius: 8px;
   background: #fff;
   color: var(--ink);
+  font-weight: 400;
+  font-style: normal;
 }
 
 input,

@@ -83,6 +83,7 @@ async function checkSetup() {
     submitAuthBtn.disabled = !settings.configured;
   } catch (error) {
     setStatus("Auth unavailable", "warning");
+    authHelp.textContent = `${error.message || "The auth service could not be reached."} Please use https://www.load-link.co.za/auth and try again.`;
     submitAuthBtn.disabled = true;
   }
 

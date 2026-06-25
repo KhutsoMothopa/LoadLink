@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>LoadLink | Secure Access</title>
     <link rel="stylesheet" href="styles.css">
+    <script>
+      if (window.location.hostname === "load-link.co.za") {
+        window.location.replace(`https://www.load-link.co.za${window.location.pathname}${window.location.search}${window.location.hash}`);
+      }
+    </script>
   </head>
   <body>
     <header class="site-header">
@@ -136,29 +141,6 @@
           </form>
         </section>
 
-        <aside class="product-panel auth-security-card">
-          <p class="section-kicker">Security model</p>
-          <h2>Access built around trust</h2>
-          <dl class="ops-summary auth-summary">
-            <div>
-              <dt>Customers</dt>
-              <dd>Own bookings only</dd>
-            </div>
-            <div>
-              <dt>Drivers</dt>
-              <dd>Own profile and assigned jobs</dd>
-            </div>
-            <div>
-              <dt>Dispatcher</dt>
-              <dd>Approved operations account</dd>
-            </div>
-            <div>
-              <dt>Database</dt>
-              <dd>Supabase with RLS</dd>
-            </div>
-          </dl>
-          <p class="fine-print">Each platform only shows the records linked to the signed-in account. Dispatcher access stays private for approved operations users.</p>
-        </aside>
       </section>
     </main>
 

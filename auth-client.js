@@ -1,7 +1,21 @@
 (function () {
-  const sessionKey = "loadlinkAuthSession";
-  const profileKey = "loadlinkAuthProfile";
-  let clientPromise = null;
+  const validRoles = ["customer", "driver", "dispatcher"];
+  let activeRole = roleFromPage();
+  const clientPromises = new Map();
+
+  function roleFromPage() {
+    const params = new URLSearchParams(window.location.search);
+    const pageRole = document.body?.dataset.requiredRole || params.get("role");
+    return validRoles.includes(pageRole) ? pageRole : "customer";
+  }
+
+  function setActiveRole(role) {
+    if (validRoles.includes(role)) activeRole = role;
+  }
+
+  function roleStorageKey(prefix, role = activeRole) {
+    return `${prefix}:${role}`;
+  }
 
   async function apiRequest(path, options = {}) {
     const response = await fetch(path, {
@@ -20,12 +34,12 @@
 
   function saveSession(session) {
     if (!session) return;
-    window.localStorage.setItem(sessionKey, JSON.stringify(session));
+    window.localStorage.setItem(roleStorageKey("loadlinkAuthSession"), JSON.stringify(session));
   }
 
   function storedSession() {
     try {
-      return JSON.parse(window.localStorage.getItem(sessionKey) || "null");
+      return JSON.parse(window.localStorage.getItem(roleStorageKey("loadlinkAuthSession")) || "null");
     } catch (error) {
       return null;
     }
@@ -33,20 +47,20 @@
 
   function saveProfile(profile) {
     if (!profile) return;
-    window.localStorage.setItem(profileKey, JSON.stringify(profile));
+    window.localStorage.setItem(roleStorageKey("loadlinkAuthProfile", profile.role || activeRole), JSON.stringify(profile));
   }
 
   function storedProfile() {
     try {
-      return JSON.parse(window.localStorage.getItem(profileKey) || "null");
+      return JSON.parse(window.localStorage.getItem(roleStorageKey("loadlinkAuthProfile")) || "null");
     } catch (error) {
       return null;
     }
   }
 
   function clearSession() {
-    window.localStorage.removeItem(sessionKey);
-    window.localStorage.removeItem(profileKey);
+    window.localStorage.removeItem(roleStorageKey("loadlinkAuthSession"));
+    window.localStorage.removeItem(roleStorageKey("loadlinkAuthProfile"));
   }
 
   async function config() {
@@ -54,9 +68,9 @@
   }
 
   async function client() {
-    if (clientPromise) return clientPromise;
+    if (clientPromises.has(activeRole)) return clientPromises.get(activeRole);
 
-    clientPromise = config().then((settings) => {
+    const clientPromise = config().then((settings) => {
       if (!settings.configured) {
         throw new Error("Supabase is not configured yet.");
       }
@@ -65,9 +79,14 @@
         throw new Error("Supabase client library could not be loaded.");
       }
 
-      return window.supabase.createClient(settings.supabaseUrl, settings.supabaseAnonKey);
+      return window.supabase.createClient(settings.supabaseUrl, settings.supabaseAnonKey, {
+        auth: {
+          storageKey: roleStorageKey("loadlinkSupabaseSession")
+        }
+      });
     });
 
+    clientPromises.set(activeRole, clientPromise);
     return clientPromise;
   }
 
@@ -297,6 +316,7 @@
   }
 
   window.LoadLinkAuth = {
+    setActiveRole,
     config,
     client,
     currentSession,

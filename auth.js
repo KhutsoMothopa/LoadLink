@@ -70,6 +70,7 @@ const resendVerificationBtn = document.querySelector("#resendVerificationBtn");
 
 let mode = "login";
 let pendingVerificationEmail = "";
+let lastPreparedRole = "";
 
 function setStatus(label, className = "neutral") {
   authStatus.textContent = label;
@@ -126,6 +127,41 @@ function setMode(nextMode) {
     : registering
       ? "Create your profile once. After login, your platform will only show records linked to your account."
       : "Use the email and password linked to your LoadLink account.";
+
+  configureCredentialFields(false);
+}
+
+function configureCredentialFields(clearCredentials = false) {
+  const isDispatcher = selectedRole === "dispatcher";
+
+  window.LoadLinkAuth?.setActiveRole?.(selectedRole);
+  authForm.setAttribute("autocomplete", isDispatcher ? "off" : "on");
+  emailInput?.setAttribute("name", `${selectedRole}_email`);
+  passwordInput?.setAttribute("name", `${selectedRole}_password`);
+  emailInput?.setAttribute("autocomplete", isDispatcher ? "off" : "username");
+  passwordInput?.setAttribute("autocomplete", isDispatcher ? "new-password" : mode === "register" ? "new-password" : "current-password");
+  emailInput?.setAttribute("data-1p-ignore", isDispatcher ? "true" : "false");
+  passwordInput?.setAttribute("data-1p-ignore", isDispatcher ? "true" : "false");
+  emailInput?.setAttribute("data-lpignore", isDispatcher ? "true" : "false");
+  passwordInput?.setAttribute("data-lpignore", isDispatcher ? "true" : "false");
+
+  if (clearCredentials) {
+    emailInput.value = "";
+    passwordInput.value = "";
+  }
+}
+
+function clearDispatcherAutofill() {
+  if (selectedRole !== "dispatcher") return;
+
+  [80, 350, 900].forEach((delay) => {
+    window.setTimeout(() => {
+      if (selectedRole !== "dispatcher") return;
+      if (document.activeElement === emailInput || document.activeElement === passwordInput) return;
+      emailInput.value = "";
+      passwordInput.value = "";
+    }, delay);
+  });
 }
 
 function formValue(id) {
@@ -134,8 +170,12 @@ function formValue(id) {
 
 function updateRole(nextRole) {
   if (!roleLabels[nextRole]) return;
+  const roleChanged = nextRole !== selectedRole || nextRole !== lastPreparedRole;
   selectedRole = nextRole;
   if (selectedRole === "dispatcher") pendingVerificationEmail = "";
+  configureCredentialFields(roleChanged && selectedRole === "dispatcher");
+  if (selectedRole === "dispatcher") clearDispatcherAutofill();
+  lastPreparedRole = selectedRole;
   document.querySelector("#authEyebrow").textContent = `${roleLabels[selectedRole]} access`;
   document.querySelector("#auth-title").textContent = roleHeroTitles[selectedRole];
   document.querySelector("#authIntro").textContent = roleCopy[selectedRole];
@@ -249,6 +289,7 @@ function closeAuth() {
 }
 
 async function checkSetup() {
+  window.LoadLinkAuth?.setActiveRole?.(selectedRole);
   updateRole(selectedRole);
   setMode(isPasswordRecoveryFlow() ? "reset" : params.get("mode") === "register" ? "register" : "login");
 
@@ -269,7 +310,7 @@ async function checkSetup() {
     setAccessFailed();
   }
 
-  if (params.get("verified") === "email") {
+  if (params.get("verified") === "email" && selectedRole !== "dispatcher") {
     pendingVerificationEmail = "";
     if (resendVerificationBtn) resendVerificationBtn.hidden = true;
     setStatus("Email verified", "active");

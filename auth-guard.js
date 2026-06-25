@@ -4,6 +4,7 @@
   const signOutButton = document.querySelector("[data-sign-out]");
 
   if (!requiredRole || !window.LoadLinkAuth) return;
+  window.LoadLinkAuth.setActiveRole?.(requiredRole);
 
   function revealPage() {
     document.body.classList.add("auth-ready");

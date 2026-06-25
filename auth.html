@@ -155,16 +155,16 @@
             </div>
           </div>
 
-          <form class="booking-form auth-form" id="authForm">
+          <form class="booking-form auth-form" id="authForm" autocomplete="off">
             <div class="field-grid" id="identityFields">
               <label>
                 <span>Email address</span>
-                <input id="email" name="email" type="email" autocomplete="email" required>
+                <input id="email" name="customer_email" type="email" autocomplete="username" autocapitalize="none" spellcheck="false" required>
               </label>
               <label>
                 <span id="passwordFieldLabel">Password</span>
                 <span class="password-control">
-                  <input id="password" name="password" type="password" autocomplete="current-password" required>
+                  <input id="password" name="customer_password" type="password" autocomplete="current-password" required>
                   <button class="password-toggle" type="button" id="passwordToggle" aria-label="Show password" aria-pressed="false">
                     <span class="eye-icon" aria-hidden="true"></span>
                   </button>
@@ -238,7 +238,7 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="auth-client.js?v=20260625-auth-3"></script>
-    <script src="auth.js?v=20260625-auth-3"></script>
+    <script src="auth-client.js?v=20260625-auth-4"></script>
+    <script src="auth.js?v=20260625-auth-4"></script>
   </body>
 </html>

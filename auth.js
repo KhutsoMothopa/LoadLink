@@ -1,8 +1,14 @@
 const params = new URLSearchParams(window.location.search);
-const selectedRole = ["customer", "driver", "dispatcher"].includes(params.get("role"))
+let selectedRole = ["customer", "driver", "dispatcher"].includes(params.get("role"))
   ? params.get("role")
   : "customer";
-const nextPath = params.get("next") || (selectedRole === "driver" ? "driver.html" : selectedRole === "dispatcher" ? "dispatcher.html" : "index.html");
+
+function nextPathForRole(role) {
+  if (params.get("next")) return params.get("next");
+  if (role === "driver") return "driver.html";
+  if (role === "dispatcher") return "dispatcher.html";
+  return "index.html";
+}
 
 const roleLabels = {
   customer: "Customer",
@@ -32,6 +38,10 @@ const registerModeBtn = document.querySelector("#registerModeBtn");
 const profileFields = document.querySelector("#profileFields");
 const driverFields = document.querySelector("#driverFields");
 const roleCards = document.querySelectorAll("[data-role-card]");
+const roleOptions = document.querySelectorAll("[data-role-option]");
+const authModal = document.querySelector("#authModal");
+const authOpeners = document.querySelectorAll("[data-auth-open]");
+const authCloseBtn = document.querySelector("#authCloseBtn");
 
 let mode = "login";
 
@@ -45,6 +55,7 @@ function setMode(nextMode) {
   const registering = mode === "register";
   const isDriver = selectedRole === "driver";
 
+  authModal.dataset.mode = mode;
   formTitle.textContent = `${roleLabels[selectedRole]} ${registering ? "registration" : "login"}`;
   submitAuthBtn.textContent = registering ? "Create account" : "Login";
   profileFields.hidden = !registering;
@@ -58,13 +69,21 @@ function setMode(nextMode) {
     : registering
       ? "Create your profile once. After login, your platform will only show records linked to your account."
       : "Use the email and password linked to your LoadLink account.";
+
+  roleOptions.forEach((option) => {
+    const optionRole = option.dataset.roleOption;
+    option.classList.toggle("active", optionRole === selectedRole);
+    option.disabled = registering && optionRole === "dispatcher";
+  });
 }
 
 function formValue(id) {
   return document.querySelector(`#${id}`).value.trim();
 }
 
-async function checkSetup() {
+function updateRole(nextRole) {
+  if (!roleLabels[nextRole]) return;
+  selectedRole = nextRole;
   document.querySelector("#authEyebrow").textContent = `${roleLabels[selectedRole]} access`;
   document.querySelector("#auth-title").textContent = roleHeroTitles[selectedRole];
   document.querySelector("#authIntro").textContent = roleCopy[selectedRole];
@@ -72,6 +91,27 @@ async function checkSetup() {
   roleCards.forEach((card) => {
     card.classList.toggle("active", card.dataset.roleCard === selectedRole);
   });
+  setMode(mode);
+}
+
+function openAuth(nextMode = "login") {
+  if (nextMode === "register" && selectedRole === "dispatcher") {
+    updateRole("customer");
+  }
+
+  authModal.hidden = false;
+  document.body.classList.add("auth-modal-open");
+  setMode(nextMode);
+  setTimeout(() => document.querySelector("#email")?.focus(), 80);
+}
+
+function closeAuth() {
+  authModal.hidden = true;
+  document.body.classList.remove("auth-modal-open");
+}
+
+async function checkSetup() {
+  updateRole(selectedRole);
   setMode(params.get("mode") === "register" ? "register" : "login");
 
   try {
@@ -89,6 +129,10 @@ async function checkSetup() {
 
   if (params.get("reason") === "role") {
     setStatus("Wrong account role", "warning");
+  }
+
+  if (params.get("mode") === "register" || params.get("open") === "login") {
+    openAuth(params.get("mode") === "register" ? "register" : "login");
   }
 }
 
@@ -134,7 +178,7 @@ async function handleSubmit(event) {
     }
 
     setStatus("Access granted", "active");
-    window.location.href = nextPath;
+    window.location.href = nextPathForRole(selectedRole);
   } catch (error) {
     setStatus("Access failed", "warning");
     authHelp.textContent = error.message;
@@ -142,6 +186,26 @@ async function handleSubmit(event) {
     submitAuthBtn.disabled = false;
   }
 }
+
+authOpeners.forEach((opener) => {
+  opener.addEventListener("click", (event) => {
+    event.preventDefault();
+    openAuth(opener.dataset.authOpen);
+  });
+});
+
+roleOptions.forEach((option) => {
+  option.addEventListener("click", () => updateRole(option.dataset.roleOption));
+});
+
+authCloseBtn.addEventListener("click", closeAuth);
+authModal.addEventListener("click", (event) => {
+  if (event.target === authModal) closeAuth();
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !authModal.hidden) closeAuth();
+});
 
 loginModeBtn.addEventListener("click", () => setMode("login"));
 registerModeBtn.addEventListener("click", () => setMode("register"));

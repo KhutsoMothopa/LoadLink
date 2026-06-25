@@ -30,11 +30,11 @@
           <span class="utility-icon help-icon" aria-hidden="true">?</span>
           <span>Help</span>
         </a>
-        <a class="auth-utility-link" href="#authForm">
+        <a class="auth-utility-link" href="#authForm" data-auth-open="login">
           <span class="utility-icon login-icon" aria-hidden="true"></span>
           <span>Log in</span>
         </a>
-        <a class="auth-signup-pill" href="auth.html?role=customer&amp;mode=register">Sign up</a>
+        <a class="auth-signup-pill" href="#authForm" data-auth-open="register">Sign up</a>
       </nav>
     </header>
 
@@ -84,14 +84,33 @@
         </aside>
       </section>
 
-      <section class="auth-layout" aria-label="Account form">
+      <section class="auth-modal" id="authModal" role="dialog" aria-modal="true" aria-labelledby="formTitle" hidden>
+        <div class="auth-modal-dialog">
         <section class="product-panel auth-card">
           <div class="panel-heading">
             <div>
               <p class="section-kicker">Account access</p>
               <h2 id="formTitle">Login</h2>
             </div>
-            <span class="status-pill neutral" id="authStatus">Checking setup</span>
+            <div class="auth-panel-actions">
+              <span class="status-pill neutral" id="authStatus">Checking setup</span>
+              <button class="auth-close-button" type="button" id="authCloseBtn" aria-label="Close account access">&times;</button>
+            </div>
+          </div>
+
+          <div class="auth-role-picker" aria-label="Choose account type">
+            <button type="button" data-role-option="customer">
+              <span>Customer</span>
+              <small>Request and track transport</small>
+            </button>
+            <button type="button" data-role-option="driver">
+              <span>Driver</span>
+              <small>Manage jobs and earnings</small>
+            </button>
+            <button type="button" data-role-option="dispatcher">
+              <span>Dispatcher</span>
+              <small>Assign and monitor work</small>
+            </button>
           </div>
 
           <div class="auth-mode-row" aria-label="Account mode">
@@ -150,6 +169,7 @@
             <p class="fine-print" id="authHelp">Dispatcher accounts are created privately by the platform owner and cannot self-register here.</p>
           </form>
         </section>
+        </div>
 
       </section>
     </main>

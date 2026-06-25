@@ -3,6 +3,7 @@
   const driversKey = "loadlinkOperationalDrivers";
   const activeBookingKey = "loadlinkActiveBooking";
   const activeDriverId = "DRV-101";
+  const prototypeDriverIds = new Set(["DRV-101", "DRV-102", "DRV-103", "DRV-104"]);
 
   const locations = {
     sandton: { label: "Sandton", lat: -26.1076, lng: 28.0567 },
@@ -13,12 +14,7 @@
     pretoria: { label: "Pretoria CBD", lat: -25.7479, lng: 28.2293 }
   };
 
-  const defaultDrivers = [
-    { id: "DRV-101", name: "Thabo M.", vehicleTypes: ["bakkie", "canopy"], currentLocationKey: "sandton", rating: 4.9 },
-    { id: "DRV-102", name: "Lerato K.", vehicleTypes: ["bakkie", "smallTruck"], currentLocationKey: "rosebank", rating: 4.8 },
-    { id: "DRV-103", name: "Mandla S.", vehicleTypes: ["smallTruck", "largeTruck"], currentLocationKey: "midrand", rating: 4.7 },
-    { id: "DRV-104", name: "Nomsa P.", vehicleTypes: ["canopy", "largeTruck"], currentLocationKey: "centurion", rating: 4.9 }
-  ];
+  const defaultDrivers = [];
 
   function readJson(key, fallback) {
     try {
@@ -48,12 +44,24 @@
     };
   }
 
+  function isPrototypeDriver(driver) {
+    return prototypeDriverIds.has(driver?.id);
+  }
+
+  function hasPrototypeDriverAssignment(booking) {
+    return prototypeDriverIds.has(booking?.assignedDriver?.id);
+  }
+
   function getDrivers(apiDrivers = []) {
     const stored = readJson(driversKey, []);
     const map = new Map(defaultDrivers.map((driver) => [driver.id, normalizeDriver(driver)]));
 
-    stored.forEach((driver) => map.set(driver.id, normalizeDriver({ ...map.get(driver.id), ...driver })));
-    apiDrivers.forEach((driver) => map.set(driver.id, normalizeDriver({ ...map.get(driver.id), ...driver })));
+    stored
+      .filter((driver) => !isPrototypeDriver(driver))
+      .forEach((driver) => map.set(driver.id, normalizeDriver({ ...map.get(driver.id), ...driver })));
+    apiDrivers
+      .filter((driver) => !isPrototypeDriver(driver))
+      .forEach((driver) => map.set(driver.id, normalizeDriver({ ...map.get(driver.id), ...driver })));
 
     const drivers = [...map.values()];
     writeJson(driversKey, drivers);
@@ -61,7 +69,18 @@
   }
 
   function saveDriverProfile(profile) {
-    const drivers = getDrivers().map((driver) => driver.id === profile.id ? normalizeDriver({ ...driver, ...profile }) : driver);
+    if (!profile?.id || isPrototypeDriver(profile)) return null;
+
+    const drivers = getDrivers();
+    const existingIndex = drivers.findIndex((driver) => driver.id === profile.id);
+    const nextProfile = normalizeDriver(existingIndex >= 0 ? { ...drivers[existingIndex], ...profile } : profile);
+
+    if (existingIndex >= 0) {
+      drivers[existingIndex] = nextProfile;
+    } else {
+      drivers.push(nextProfile);
+    }
+
     writeJson(driversKey, drivers);
     return drivers.find((driver) => driver.id === profile.id);
   }
@@ -165,10 +184,15 @@
   function paidRequests(apiRequests = []) {
     return mergeBookings(apiRequests)
       .filter((booking) => booking.payment?.status === "paid" && booking.status !== "delivered")
-      .map((booking) => ({
-        ...booking,
-        driverCandidates: booking.driverCandidates?.length ? booking.driverCandidates : driverCandidates(booking)
-      }));
+      .filter((booking) => !hasPrototypeDriverAssignment(booking))
+      .map((booking) => {
+        const storedCandidates = (booking.driverCandidates || []).filter((driver) => !isPrototypeDriver(driver));
+
+        return {
+          ...booking,
+          driverCandidates: storedCandidates.length ? storedCandidates : driverCandidates(booking)
+        };
+      });
   }
 
   function pushStatus(booking, status, actor) {

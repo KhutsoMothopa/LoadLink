@@ -62,12 +62,7 @@ const allowedStatuses = [
   "delivered"
 ];
 
-const driverPool = [
-  { id: "DRV-101", name: "Thabo M.", vehicleTypes: ["bakkie", "canopy"], defaultLocationKey: "sandton", rating: 4.9 },
-  { id: "DRV-102", name: "Lerato K.", vehicleTypes: ["bakkie", "smallTruck"], defaultLocationKey: "rosebank", rating: 4.8 },
-  { id: "DRV-103", name: "Mandla S.", vehicleTypes: ["smallTruck", "largeTruck"], defaultLocationKey: "midrand", rating: 4.7 },
-  { id: "DRV-104", name: "Nomsa P.", vehicleTypes: ["canopy", "largeTruck"], defaultLocationKey: "centurion", rating: 4.9 }
-];
+const prototypeDriverIds = new Set(["DRV-101", "DRV-102", "DRV-103", "DRV-104"]);
 
 const contentTypes = {
   ".html": "text/html; charset=utf-8",
@@ -148,28 +143,20 @@ function writePaymentSessions(sessions) {
 }
 
 function defaultDrivers() {
-  const now = new Date().toISOString();
+  return [];
+}
 
-  return driverPool.map((driver) => {
-    const location = locations[driver.defaultLocationKey] || locations.sandton;
-
-    return {
-      ...driver,
-      available: true,
-      currentLocationKey: driver.defaultLocationKey,
-      currentLocationLabel: location.label,
-      lat: location.lat,
-      lng: location.lng,
-      updatedAt: now
-    };
-  });
+function isPrototypeDriverId(driverId) {
+  return prototypeDriverIds.has(driverId);
 }
 
 function readDrivers() {
   ensureStore();
   try {
     const drivers = JSON.parse(fs.readFileSync(driversFile, "utf8"));
-    return Array.isArray(drivers) && drivers.length ? drivers : defaultDrivers();
+    return Array.isArray(drivers)
+      ? drivers.filter((driver) => !isPrototypeDriverId(driver?.id))
+      : defaultDrivers();
   } catch (error) {
     return defaultDrivers();
   }
@@ -400,7 +387,7 @@ function dispatcherViewForBooking(booking) {
 
 function getDriverProfile(driverId = activeDriverId) {
   const driver = readDrivers().find((item) => item.id === driverId);
-  return driver || defaultDrivers().find((item) => item.id === driverId) || null;
+  return driver || null;
 }
 
 function updateDriverProfile(driverId, input) {
@@ -820,6 +807,7 @@ function listDispatcherRequests() {
       booking.payment?.status === "paid" &&
       booking.status !== "delivered"
     )
+    .filter((booking) => !isPrototypeDriverId(booking.assignedDriver?.id))
     .map(dispatcherViewForBooking)
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 }

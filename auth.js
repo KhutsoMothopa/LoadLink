@@ -61,9 +61,9 @@ function setMode(nextMode) {
   submitAuthBtn.textContent = registering ? "Create account" : "Login";
   profileFields.hidden = !registering;
   driverFields.hidden = !(registering && isDriver);
-  registerModeBtn.disabled = selectedRole === "dispatcher";
-  loginModeBtn.className = registering ? "secondary-dark-button" : "primary-button";
-  registerModeBtn.className = registering ? "primary-button" : "secondary-dark-button";
+  if (registerModeBtn) registerModeBtn.disabled = selectedRole === "dispatcher";
+  if (loginModeBtn) loginModeBtn.className = registering ? "secondary-dark-button" : "primary-button";
+  if (registerModeBtn) registerModeBtn.className = registering ? "primary-button" : "secondary-dark-button";
 
   authHelp.textContent = selectedRole === "dispatcher"
     ? "Dispatcher accounts are created privately by the platform owner and cannot self-register here."
@@ -235,7 +235,7 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") closeAuthMenus();
 });
 
-loginModeBtn.addEventListener("click", () => setMode("login"));
-registerModeBtn.addEventListener("click", () => setMode("register"));
+loginModeBtn?.addEventListener("click", () => setMode("login"));
+registerModeBtn?.addEventListener("click", () => setMode("register"));
 authForm.addEventListener("submit", handleSubmit);
 checkSetup();

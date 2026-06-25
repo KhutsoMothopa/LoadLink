@@ -119,9 +119,17 @@ button {
 
 .desktop-nav {
   display: flex;
+  align-items: center;
   gap: 24px;
   color: #475569;
   font-size: 0.92rem;
+}
+
+.desktop-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  line-height: 1;
 }
 
 .desktop-nav a:hover,

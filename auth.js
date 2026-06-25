@@ -4,10 +4,26 @@ let selectedRole = ["customer", "driver", "dispatcher"].includes(params.get("rol
   : "customer";
 
 function nextPathForRole(role) {
-  if (params.get("next")) return params.get("next");
+  const next = params.get("next");
+
+  if (next && roleForPath(next) === role) return next;
   if (role === "driver") return "driver.html";
   if (role === "dispatcher") return "dispatcher.html";
   return "index.html";
+}
+
+function roleForPath(path) {
+  const cleanPath = path
+    .replace(/^https?:\/\/[^/]+/i, "")
+    .replace(/[?#].*$/, "")
+    .replace(/^\/+/, "")
+    .toLowerCase();
+
+  if (!cleanPath || cleanPath === "index.html") return "customer";
+  if (["payment", "payment.html", "tracking", "tracking.html", "gateway", "gateway.html"].includes(cleanPath)) return "customer";
+  if (["driver", "driver.html"].includes(cleanPath)) return "driver";
+  if (["dispatcher", "dispatcher.html", "dispatcher-drivers", "dispatcher-drivers.html"].includes(cleanPath)) return "dispatcher";
+  return "";
 }
 
 const roleLabels = {
@@ -65,11 +81,15 @@ function setAccessFailed(message = "The login details do not match this access a
   authHelp.textContent = message;
 }
 
-function setLoginFailed(email) {
-  pendingVerificationEmail = email || "";
+function setLoginFailed(email, error) {
+  const message = error?.message || "";
+  const needsEmailVerification =
+    selectedRole !== "dispatcher" && /email.*confirm|confirm.*email|not confirmed|verification/i.test(message);
+
+  pendingVerificationEmail = needsEmailVerification ? email || "" : "";
   setAccessFailed(
-    pendingVerificationEmail
-      ? "The login details could not be confirmed. If this account was created recently, verify the email address or resend the verification email."
+    needsEmailVerification
+      ? "This account still needs email verification. Confirm the email address or resend the verification email."
       : "The login details do not match this access area."
   );
   if (resendVerificationBtn) resendVerificationBtn.hidden = !pendingVerificationEmail;
@@ -97,7 +117,7 @@ function setMode(nextMode) {
   if (loginModeBtn) loginModeBtn.className = registering ? "secondary-dark-button" : "primary-button";
   if (registerModeBtn) registerModeBtn.className = registering ? "primary-button" : "secondary-dark-button";
   if (forgotPasswordBtn) forgotPasswordBtn.hidden = registering || resetting;
-  if (resendVerificationBtn) resendVerificationBtn.hidden = !pendingVerificationEmail || registering || resetting;
+  if (resendVerificationBtn) resendVerificationBtn.hidden = selectedRole === "dispatcher" || !pendingVerificationEmail || registering || resetting;
 
   authHelp.textContent = resetting
     ? "Enter a new password for your LoadLink account."
@@ -115,6 +135,7 @@ function formValue(id) {
 function updateRole(nextRole) {
   if (!roleLabels[nextRole]) return;
   selectedRole = nextRole;
+  if (selectedRole === "dispatcher") pendingVerificationEmail = "";
   document.querySelector("#authEyebrow").textContent = `${roleLabels[selectedRole]} access`;
   document.querySelector("#auth-title").textContent = roleHeroTitles[selectedRole];
   document.querySelector("#authIntro").textContent = roleCopy[selectedRole];
@@ -321,7 +342,7 @@ async function handleSubmit(event) {
       setMode("login");
       setStatus("Verify email", "warning");
       authHelp.textContent = "We sent a verification link to your email address. Confirm your email, then return here to log in.";
-      if (resendVerificationBtn) resendVerificationBtn.hidden = false;
+      if (resendVerificationBtn) resendVerificationBtn.hidden = selectedRole === "dispatcher";
       return;
     }
 
@@ -335,7 +356,7 @@ async function handleSubmit(event) {
     window.location.href = nextPathForRole(selectedRole);
   } catch (error) {
     if (mode === "login") {
-      setLoginFailed(formValue("email"));
+      setLoginFailed(formValue("email"), error);
     } else {
       setAccessFailed();
     }

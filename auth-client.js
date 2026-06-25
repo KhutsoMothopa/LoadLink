@@ -237,7 +237,11 @@
 
   async function requestPasswordReset(email) {
     const supabase = await client();
-    const redirectTo = `${window.location.origin}/auth.html?mode=reset`;
+    const productionResetUrl = "https://www.load-link.co.za/auth?mode=reset";
+    const localResetUrl = `${window.location.origin}/auth.html?mode=reset`;
+    const redirectTo = window.location.hostname.endsWith("load-link.co.za")
+      ? productionResetUrl
+      : localResetUrl;
     const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
 
     if (error) throw error;

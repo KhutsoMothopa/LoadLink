@@ -137,6 +137,11 @@ function isPasswordRecoveryFlow() {
   return params.get("type") === "recovery" || hashParams.get("type") === "recovery" || params.get("mode") === "reset";
 }
 
+function recoveryError() {
+  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  return params.get("error_code") || hashParams.get("error_code") || params.get("error") || hashParams.get("error");
+}
+
 async function handlePasswordResetRequest() {
   const email = formValue("email");
 
@@ -200,6 +205,13 @@ async function checkSetup() {
 
   if (["access", "role"].includes(params.get("reason"))) {
     setAccessFailed();
+  }
+
+  if (recoveryError()) {
+    openAuth("login");
+    setStatus("Reset link expired", "warning");
+    authHelp.textContent = "This password reset link is invalid or has expired. Request a new reset link and use the latest email from Supabase.";
+    return;
   }
 
   if (isPasswordRecoveryFlow()) {

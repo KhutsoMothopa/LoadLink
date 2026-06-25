@@ -792,12 +792,11 @@ a:focus-visible {
 }
 
 .auth-page {
-  background:
-    linear-gradient(90deg, rgba(17, 24, 39, 0.92), rgba(17, 24, 39, 0.74) 52%, rgba(17, 24, 39, 0.36)),
-    url("https://images.unsplash.com/photo-1519003722824-194d4455a60c?auto=format&fit=crop&w=1800&q=80") center / cover;
+  background: #eef1f5;
 }
 
 .auth-hero {
+  position: relative;
   max-width: 1240px;
   margin: 0 auto;
   padding: 74px clamp(16px, 5vw, 72px) 36px;
@@ -807,6 +806,16 @@ a:focus-visible {
   align-items: end;
   min-height: 560px;
   color: #fff;
+}
+
+.auth-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0 calc(50% - 50vw);
+  z-index: -1;
+  background:
+    linear-gradient(90deg, rgba(17, 24, 39, 0.92), rgba(17, 24, 39, 0.74) 52%, rgba(17, 24, 39, 0.36)),
+    url("https://images.unsplash.com/photo-1519003722824-194d4455a60c?auto=format&fit=crop&w=1800&q=80") center / cover;
 }
 
 .auth-hero-copy h1 {
@@ -908,6 +917,79 @@ a:focus-visible {
   margin: 0;
   color: #d7dde6;
   text-align: right;
+}
+
+.auth-info-section,
+.auth-role-section {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 72px clamp(16px, 5vw, 72px);
+}
+
+.auth-info-section {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 28px;
+  align-items: start;
+}
+
+.auth-info-heading h2 {
+  margin: 0;
+  color: #17202b;
+  font-size: clamp(2rem, 4vw, 3.8rem);
+  line-height: 1.02;
+}
+
+.auth-workflow-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.auth-workflow-grid article,
+.auth-role-section article {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  box-shadow: 0 14px 34px rgba(17, 24, 39, 0.08);
+}
+
+.auth-workflow-grid article {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  column-gap: 18px;
+  padding: 24px;
+}
+
+.auth-workflow-grid span {
+  grid-row: span 2;
+  color: var(--accent-dark);
+  font-size: 1.4rem;
+  font-weight: 900;
+}
+
+.auth-workflow-grid h3,
+.auth-role-section h3 {
+  margin: 0;
+  color: #17202b;
+  font-size: 1.25rem;
+}
+
+.auth-workflow-grid p,
+.auth-role-section p:last-child {
+  margin: 8px 0 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.auth-role-section {
+  padding-top: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.auth-role-section article {
+  padding: 26px;
 }
 
 .auth-layout {
@@ -1304,6 +1386,8 @@ body.auth-modal-open {
   .customer-grid,
   .tracking-layout,
   .auth-hero,
+  .auth-info-section,
+  .auth-role-section,
   .auth-layout,
   .legal-layout,
   .driver-dashboard,
@@ -1395,6 +1479,8 @@ body.auth-modal-open {
   .console-grid,
   .customer-grid,
   .tracking-layout,
+  .auth-info-section,
+  .auth-role-section,
   .auth-layout,
   .legal-layout,
   .roadmap-section {
@@ -1439,6 +1525,14 @@ body.auth-modal-open {
 
   .footer-links a {
     margin-top: 0;
+  }
+
+  .auth-workflow-grid article {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-workflow-grid span {
+    grid-row: auto;
   }
 }
 

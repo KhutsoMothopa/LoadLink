@@ -30,11 +30,30 @@
           <span class="utility-icon help-icon" aria-hidden="true">?</span>
           <span>Help</span>
         </a>
-        <a class="auth-utility-link" href="#authForm" data-auth-open="login">
-          <span class="utility-icon login-icon" aria-hidden="true"></span>
-          <span>Log in</span>
-        </a>
-        <a class="auth-signup-pill" href="#authForm" data-auth-open="register">Sign up</a>
+        <div class="auth-menu">
+          <button class="auth-utility-link auth-menu-trigger" type="button" data-auth-menu-trigger="login" aria-expanded="false">
+            <span class="utility-icon login-icon" aria-hidden="true"></span>
+            <span>Log in</span>
+          </button>
+          <div class="auth-role-menu" data-auth-menu-panel="login" hidden>
+            <p>Log in as</p>
+            <button type="button" data-auth-role-open data-auth-mode="login" data-auth-role="customer">Customer</button>
+            <button type="button" data-auth-role-open data-auth-mode="login" data-auth-role="driver">Driver</button>
+            <button type="button" data-auth-role-open data-auth-mode="login" data-auth-role="dispatcher">Dispatcher</button>
+          </div>
+        </div>
+        <div class="auth-menu">
+          <button class="auth-signup-pill auth-menu-trigger" type="button" data-auth-menu-trigger="register" aria-expanded="false">Sign up</button>
+          <div class="auth-role-menu auth-role-menu-right" data-auth-menu-panel="register" hidden>
+            <p>Sign up as</p>
+            <button type="button" data-auth-role-open data-auth-mode="register" data-auth-role="customer">Customer</button>
+            <button type="button" data-auth-role-open data-auth-mode="register" data-auth-role="driver">Driver</button>
+            <button type="button" data-auth-role-open data-auth-mode="login" data-auth-role="dispatcher">
+              Dispatcher
+              <small>Private login only</small>
+            </button>
+          </div>
+        </div>
       </nav>
     </header>
 
@@ -96,21 +115,6 @@
               <span class="status-pill neutral" id="authStatus">Checking setup</span>
               <button class="auth-close-button" type="button" id="authCloseBtn" aria-label="Close account access">&times;</button>
             </div>
-          </div>
-
-          <div class="auth-role-picker" aria-label="Choose account type">
-            <button type="button" data-role-option="customer">
-              <span>Customer</span>
-              <small>Request and track transport</small>
-            </button>
-            <button type="button" data-role-option="driver">
-              <span>Driver</span>
-              <small>Manage jobs and earnings</small>
-            </button>
-            <button type="button" data-role-option="dispatcher">
-              <span>Dispatcher</span>
-              <small>Assign and monitor work</small>
-            </button>
           </div>
 
           <div class="auth-mode-row" aria-label="Account mode">

@@ -146,14 +146,80 @@ button {
   justify-content: center;
   min-height: 42px;
   padding: 0 18px;
+  border: 0;
   border-radius: 999px;
   background: var(--ink);
   color: #fff;
+  cursor: pointer;
   font-weight: 900;
 }
 
 .auth-signup-pill:hover {
   background: var(--charcoal);
+}
+
+.auth-menu {
+  position: relative;
+}
+
+.auth-menu-trigger {
+  border: 0;
+  cursor: pointer;
+}
+
+button.auth-utility-link {
+  padding: 0;
+  background: transparent;
+  font-weight: 900;
+}
+
+.auth-role-menu {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  z-index: 80;
+  width: 230px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 24px 60px rgba(17, 24, 39, 0.18);
+}
+
+.auth-role-menu[hidden] {
+  display: none;
+}
+
+.auth-role-menu p {
+  margin: 4px 8px 8px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.auth-role-menu button {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+  font-weight: 900;
+}
+
+.auth-role-menu button:hover {
+  background: #f4f6f8;
+}
+
+.auth-role-menu small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-weight: 700;
 }
 
 .utility-icon {
@@ -906,49 +972,6 @@ body.auth-modal-open {
   border-color: var(--steel);
 }
 
-.auth-role-picker {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  margin: 8px 0 20px;
-}
-
-.auth-role-picker button {
-  min-height: 96px;
-  padding: 14px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #fff;
-  color: var(--ink);
-  text-align: left;
-}
-
-.auth-role-picker button.active {
-  border-color: var(--accent-dark);
-  background: #fff8ed;
-  box-shadow: inset 0 0 0 1px rgba(184, 135, 70, 0.36);
-}
-
-.auth-role-picker button:disabled {
-  cursor: not-allowed;
-  opacity: 0.42;
-}
-
-.auth-role-picker span,
-.auth-role-picker small {
-  display: block;
-}
-
-.auth-role-picker span {
-  font-weight: 900;
-}
-
-.auth-role-picker small {
-  margin-top: 7px;
-  color: var(--muted);
-  line-height: 1.45;
-}
-
 .auth-mode-row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1352,7 +1375,6 @@ body.auth-modal-open {
 
   .trust-strip,
   .auth-paths,
-  .auth-role-picker,
   .field-grid,
   .roadmap-list {
     grid-template-columns: 1fr;

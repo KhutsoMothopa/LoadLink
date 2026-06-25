@@ -38,9 +38,10 @@ const registerModeBtn = document.querySelector("#registerModeBtn");
 const profileFields = document.querySelector("#profileFields");
 const driverFields = document.querySelector("#driverFields");
 const roleCards = document.querySelectorAll("[data-role-card]");
-const roleOptions = document.querySelectorAll("[data-role-option]");
 const authModal = document.querySelector("#authModal");
-const authOpeners = document.querySelectorAll("[data-auth-open]");
+const authMenuTriggers = document.querySelectorAll("[data-auth-menu-trigger]");
+const authMenuPanels = document.querySelectorAll("[data-auth-menu-panel]");
+const authRoleOpeners = document.querySelectorAll("[data-auth-role-open]");
 const authCloseBtn = document.querySelector("#authCloseBtn");
 
 let mode = "login";
@@ -69,12 +70,6 @@ function setMode(nextMode) {
     : registering
       ? "Create your profile once. After login, your platform will only show records linked to your account."
       : "Use the email and password linked to your LoadLink account.";
-
-  roleOptions.forEach((option) => {
-    const optionRole = option.dataset.roleOption;
-    option.classList.toggle("active", optionRole === selectedRole);
-    option.disabled = registering && optionRole === "dispatcher";
-  });
 }
 
 function formValue(id) {
@@ -94,11 +89,36 @@ function updateRole(nextRole) {
   setMode(mode);
 }
 
-function openAuth(nextMode = "login") {
+function closeAuthMenus() {
+  authMenuPanels.forEach((panel) => {
+    panel.hidden = true;
+  });
+  authMenuTriggers.forEach((trigger) => {
+    trigger.setAttribute("aria-expanded", "false");
+  });
+}
+
+function toggleAuthMenu(menuName) {
+  const panel = document.querySelector(`[data-auth-menu-panel="${menuName}"]`);
+  const trigger = document.querySelector(`[data-auth-menu-trigger="${menuName}"]`);
+  const willOpen = panel?.hidden;
+
+  closeAuthMenus();
+
+  if (panel && trigger && willOpen) {
+    panel.hidden = false;
+    trigger.setAttribute("aria-expanded", "true");
+  }
+}
+
+function openAuth(nextMode = "login", nextRole = selectedRole) {
+  updateRole(nextRole);
+
   if (nextMode === "register" && selectedRole === "dispatcher") {
     updateRole("customer");
   }
 
+  closeAuthMenus();
   authModal.hidden = false;
   document.body.classList.add("auth-modal-open");
   setMode(nextMode);
@@ -187,15 +207,18 @@ async function handleSubmit(event) {
   }
 }
 
-authOpeners.forEach((opener) => {
-  opener.addEventListener("click", (event) => {
+authMenuTriggers.forEach((trigger) => {
+  trigger.addEventListener("click", (event) => {
     event.preventDefault();
-    openAuth(opener.dataset.authOpen);
+    event.stopPropagation();
+    toggleAuthMenu(trigger.dataset.authMenuTrigger);
   });
 });
 
-roleOptions.forEach((option) => {
-  option.addEventListener("click", () => updateRole(option.dataset.roleOption));
+authRoleOpeners.forEach((opener) => {
+  opener.addEventListener("click", () => {
+    openAuth(opener.dataset.authMode, opener.dataset.authRole);
+  });
 });
 
 authCloseBtn.addEventListener("click", closeAuth);
@@ -203,8 +226,13 @@ authModal.addEventListener("click", (event) => {
   if (event.target === authModal) closeAuth();
 });
 
+document.addEventListener("click", (event) => {
+  if (!event.target.closest(".auth-menu")) closeAuthMenus();
+});
+
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !authModal.hidden) closeAuth();
+  if (event.key === "Escape") closeAuthMenus();
 });
 
 loginModeBtn.addEventListener("click", () => setMode("login"));

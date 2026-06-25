@@ -797,6 +797,7 @@ a:focus-visible {
 
 .auth-hero {
   position: relative;
+  isolation: isolate;
   max-width: 1240px;
   margin: 0 auto;
   padding: 74px clamp(16px, 5vw, 72px) 36px;

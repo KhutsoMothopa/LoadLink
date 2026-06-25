@@ -240,7 +240,6 @@ document.addEventListener("keydown", (event) => {
 passwordToggle?.addEventListener("click", () => {
   const showingPassword = passwordInput.type === "text";
   passwordInput.type = showingPassword ? "password" : "text";
-  passwordToggle.textContent = showingPassword ? "Show" : "Hide";
   passwordToggle.setAttribute("aria-label", showingPassword ? "Show password" : "Hide password");
   passwordToggle.setAttribute("aria-pressed", String(!showingPassword));
 });

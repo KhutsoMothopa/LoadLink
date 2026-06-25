@@ -72,7 +72,7 @@ async function checkSetup() {
   roleCards.forEach((card) => {
     card.classList.toggle("active", card.dataset.roleCard === selectedRole);
   });
-  setMode("login");
+  setMode(params.get("mode") === "register" ? "register" : "login");
 
   try {
     const settings = await window.LoadLinkAuth.config();

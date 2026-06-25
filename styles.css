@@ -53,8 +53,8 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 24px;
-  padding: 16px clamp(20px, 5vw, 72px);
+  gap: 20px;
+  padding: 9px clamp(18px, 5vw, 64px);
   border-bottom: 1px solid rgba(216, 222, 231, 0.88);
   background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(16px);
@@ -63,18 +63,19 @@ button {
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   min-width: max-content;
 }
 
 .brand-mark {
   display: grid;
-  width: 42px;
-  height: 42px;
+  width: 34px;
+  height: 34px;
   place-items: center;
   border-radius: 8px;
   background: var(--charcoal);
   color: #fff;
+  font-size: 0.9rem;
   font-weight: 900;
 }
 
@@ -84,15 +85,16 @@ button {
 }
 
 .brand small {
-  margin-top: 2px;
+  margin-top: 1px;
   color: var(--muted);
+  font-size: 0.82rem;
 }
 
 .desktop-nav {
   display: flex;
-  gap: 28px;
+  gap: 24px;
   color: #475569;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
 }
 
 .desktop-nav a:hover,
@@ -123,9 +125,9 @@ button {
 .auth-utility-nav {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
   min-width: max-content;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 900;
 }
 
@@ -144,8 +146,8 @@ button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 42px;
-  padding: 0 18px;
+  min-height: 36px;
+  padding: 0 16px;
   border: 0;
   border-radius: 999px;
   background: var(--ink);
@@ -1408,7 +1410,7 @@ body.auth-modal-open {
 
 @media (max-width: 760px) {
   .site-header {
-    padding: 12px 16px;
+    padding: 8px 14px;
   }
 
   .header-action {
@@ -1434,8 +1436,8 @@ body.auth-modal-open {
   }
 
   .auth-signup-pill {
-    min-height: 38px;
-    padding: 0 14px;
+    min-height: 34px;
+    padding: 0 13px;
   }
 
   .hero {

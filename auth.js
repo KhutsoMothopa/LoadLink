@@ -154,7 +154,7 @@ async function checkSetup() {
     submitAuthBtn.disabled = true;
   }
 
-  if (params.get("reason") === "role") {
+  if (["access", "role"].includes(params.get("reason"))) {
     setAccessFailed();
   }
 

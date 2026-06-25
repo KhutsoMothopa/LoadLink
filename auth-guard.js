@@ -33,7 +33,7 @@
 
     if (profile.role !== requiredRole) {
       await window.LoadLinkAuth.signOut();
-      window.location.href = `auth.html?role=${encodeURIComponent(requiredRole)}&next=${encodeURIComponent(window.location.pathname)}&reason=role`;
+      window.location.href = `auth.html?role=${encodeURIComponent(requiredRole)}&next=${encodeURIComponent(window.location.pathname)}&reason=access`;
       return;
     }
 

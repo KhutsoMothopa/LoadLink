@@ -3,11 +3,11 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>LoadLink | Dispatch Desk</title>
+    <title>LoadLink | Driver Network</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="styles.css">
   </head>
-  <body data-required-role="dispatcher" data-dispatcher-view="requests">
+  <body data-required-role="dispatcher" data-dispatcher-view="drivers">
     <header class="site-header">
       <a class="brand" href="dispatcher.html" aria-label="LoadLink dispatch home">
         <span class="brand-mark"><img src="logo-mark.svg" alt=""></span>
@@ -17,8 +17,8 @@
         </span>
       </a>
       <nav class="desktop-nav" aria-label="Dispatch navigation">
-        <a class="active" href="dispatcher.html">Requests</a>
-        <a href="dispatcher-drivers.html">Drivers</a>
+        <a href="dispatcher.html">Requests</a>
+        <a class="active" href="dispatcher-drivers.html">Drivers</a>
       </nav>
       <div class="header-actions">
         <span class="status-pill neutral" data-auth-status>Dispatcher account</span>
@@ -28,24 +28,24 @@
     </header>
 
     <main class="tracking-page">
-      <section class="tracking-hero" aria-labelledby="dispatcher-title">
-        <p class="eyebrow">Dispatcher website</p>
-        <h1 id="dispatcher-title">Assign paid requests to the nearest reliable driver</h1>
-        <p id="dispatcherIntro">Paid customer requests arrive here for dispatcher review. Assign a suitable available driver, then the driver can accept and update the trip.</p>
+      <section class="tracking-hero" aria-labelledby="drivers-title">
+        <p class="eyebrow">Driver network</p>
+        <h1 id="drivers-title">Review available drivers before assigning work</h1>
+        <p>See registered driver locations, vehicle details, contact information, and current job status from one dispatcher-only board.</p>
       </section>
 
       <section class="driver-workspace">
-        <section class="product-panel" id="requests">
+        <section class="product-panel dispatcher-drivers-panel" id="drivers">
           <div class="panel-heading">
             <div>
-              <p class="section-kicker">Paid requests</p>
-              <h2>Dispatch queue</h2>
+              <p class="section-kicker">Driver network</p>
+              <h2>Availability board</h2>
             </div>
-            <span class="status-pill neutral" id="dispatcherQueueStatus">Loading</span>
+            <span class="status-pill neutral" id="dispatcherDriverStatus">Loading</span>
           </div>
 
-          <div class="dispatcher-request-list" id="dispatcherRequestList">
-            <p class="fine-print">Loading paid requests...</p>
+          <div class="dispatcher-driver-list" id="dispatcherDriverList">
+            <p class="fine-print">Loading available drivers...</p>
           </div>
         </section>
       </section>

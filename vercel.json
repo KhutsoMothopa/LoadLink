@@ -15,6 +15,10 @@
       "destination": "/dispatcher.html"
     },
     {
+      "source": "/dispatcher-drivers",
+      "destination": "/dispatcher-drivers.html"
+    },
+    {
       "source": "/tracking",
       "destination": "/tracking.html"
     },

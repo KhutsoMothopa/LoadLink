@@ -1,6 +1,8 @@
 const dispatcherRequestList = document.querySelector("#dispatcherRequestList");
 const dispatcherDriverList = document.querySelector("#dispatcherDriverList");
 const refreshDispatchBtn = document.querySelector("#refreshDispatchBtn");
+const hasRequestsPanel = Boolean(dispatcherRequestList);
+const hasDriversPanel = Boolean(dispatcherDriverList);
 let isLoadingDispatcher = false;
 let isAssigningRequest = false;
 const dispatcherRequests = new Map();
@@ -32,6 +34,7 @@ async function apiRequest(path, options = {}) {
 
 function setStatus(selector, label, className) {
   const pill = document.querySelector(selector);
+  if (!pill) return;
   pill.textContent = label;
   pill.className = `status-pill ${className}`;
 }
@@ -108,6 +111,8 @@ function requestCard(request) {
 }
 
 function renderRequests(requests) {
+  if (!dispatcherRequestList) return;
+
   const openRequests = requests.filter((request) => request.status === "dispatcher_notified");
   dispatcherRequests.clear();
   requests.forEach((request) => dispatcherRequests.set(request.id, request));
@@ -163,6 +168,8 @@ function driverCard(driver) {
 }
 
 function renderDrivers(drivers) {
+  if (!dispatcherDriverList) return;
+
   const availableCount = drivers.filter((driver) => driver.available).length;
   setStatus("#dispatcherDriverStatus", `${availableCount} available`, availableCount ? "active" : "warning");
   dispatcherDriverList.innerHTML = drivers.length
@@ -201,62 +208,73 @@ async function registeredDriversFromSupabase() {
 }
 
 async function loadDispatcher() {
-  if (isLoadingDispatcher || isAssigningRequest) return;
+  if (isLoadingDispatcher || isAssigningRequest || (!hasRequestsPanel && !hasDriversPanel)) return;
 
   isLoadingDispatcher = true;
-  refreshDispatchBtn.disabled = true;
+  if (refreshDispatchBtn) refreshDispatchBtn.disabled = true;
 
-  const cachedRequests = window.LoadLinkOps?.paidRequests() || [];
-  const cachedDrivers = window.LoadLinkOps?.getDrivers() || [];
+  const cachedRequests = hasRequestsPanel ? window.LoadLinkOps?.paidRequests() || [] : [];
+  const cachedDrivers = hasDriversPanel ? window.LoadLinkOps?.getDrivers() || [] : [];
 
-  if (cachedRequests.length) {
-    renderRequests(cachedRequests);
-  } else {
-    setStatus("#dispatcherQueueStatus", "Loading", "neutral");
+  if (hasRequestsPanel) {
+    if (cachedRequests.length) {
+      renderRequests(cachedRequests);
+    } else {
+      setStatus("#dispatcherQueueStatus", "Loading", "neutral");
+    }
   }
 
-  if (cachedDrivers.length) {
-    renderDrivers(cachedDrivers);
-  } else {
-    setStatus("#dispatcherDriverStatus", "Loading", "neutral");
+  if (hasDriversPanel) {
+    if (cachedDrivers.length) {
+      renderDrivers(cachedDrivers);
+    } else {
+      setStatus("#dispatcherDriverStatus", "Loading", "neutral");
+    }
   }
 
   try {
     const [requestsPayload, driversPayload] = await Promise.all([
-      apiRequest("/api/dispatcher/requests"),
-      apiRequest("/api/dispatcher/drivers")
+      hasRequestsPanel ? apiRequest("/api/dispatcher/requests") : Promise.resolve({ requests: [] }),
+      hasDriversPanel ? apiRequest("/api/dispatcher/drivers") : Promise.resolve({ drivers: [] })
     ]);
 
-    const requests = window.LoadLinkOps
-      ? window.LoadLinkOps.paidRequests(requestsPayload.requests)
-      : requestsPayload.requests;
-    const drivers = window.LoadLinkOps
-      ? window.LoadLinkOps.getDrivers(driversPayload.drivers)
-      : driversPayload.drivers;
+    if (hasRequestsPanel) {
+      const requests = window.LoadLinkOps
+        ? window.LoadLinkOps.paidRequests(requestsPayload.requests)
+        : requestsPayload.requests;
+      renderRequests(requests);
+    }
 
-    const registeredDrivers = await registeredDriversFromSupabase();
-
-    renderRequests(requests);
-    renderDrivers(registeredDrivers.length ? registeredDrivers : drivers);
+    if (hasDriversPanel) {
+      const drivers = window.LoadLinkOps
+        ? window.LoadLinkOps.getDrivers(driversPayload.drivers)
+        : driversPayload.drivers;
+      const registeredDrivers = await registeredDriversFromSupabase();
+      renderDrivers(registeredDrivers.length ? registeredDrivers : drivers);
+    }
   } catch (error) {
     const requests = window.LoadLinkOps?.paidRequests() || [];
     const drivers = window.LoadLinkOps?.getDrivers() || [];
 
-    if (requests.length) {
-      renderRequests(requests);
-      setStatus("#dispatcherQueueStatus", "Saved queue", "warning");
-    } else {
-      setStatus("#dispatcherQueueStatus", "Dispatch API unavailable", "warning");
+    if (hasRequestsPanel) {
+      if (requests.length) {
+        renderRequests(requests);
+        setStatus("#dispatcherQueueStatus", "Saved queue", "warning");
+      } else {
+        setStatus("#dispatcherQueueStatus", "Dispatch API unavailable", "warning");
+      }
     }
 
-    if (drivers.length) {
-      renderDrivers(drivers);
-    } else {
-      setStatus("#dispatcherDriverStatus", "Driver list unavailable", "warning");
+    if (hasDriversPanel) {
+      if (drivers.length) {
+        renderDrivers(drivers);
+      } else {
+        setStatus("#dispatcherDriverStatus", "Driver list unavailable", "warning");
+      }
     }
   } finally {
     isLoadingDispatcher = false;
-    refreshDispatchBtn.disabled = false;
+    if (refreshDispatchBtn) refreshDispatchBtn.disabled = false;
   }
 }
 
@@ -297,12 +315,14 @@ async function assignRequest(requestId) {
   }
 }
 
-dispatcherRequestList.addEventListener("click", (event) => {
-  const button = event.target.closest("button[data-action='assign']");
-  if (!button) return;
+if (dispatcherRequestList) {
+  dispatcherRequestList.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-action='assign']");
+    if (!button) return;
 
-  assignRequest(button.dataset.request);
-});
+    assignRequest(button.dataset.request);
+  });
+}
 
-refreshDispatchBtn.addEventListener("click", loadDispatcher);
+if (refreshDispatchBtn) refreshDispatchBtn.addEventListener("click", loadDispatcher);
 loadDispatcher();

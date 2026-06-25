@@ -1239,6 +1239,23 @@ body.auth-modal-open {
   opacity: 0.55;
 }
 
+.verification-note {
+  display: grid;
+  gap: 5px;
+  margin-top: -4px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fafc;
+  color: var(--steel);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.verification-note strong {
+  color: var(--ink);
+}
+
 .register-fields[hidden],
 .driver-register-fields[hidden] {
   display: none;

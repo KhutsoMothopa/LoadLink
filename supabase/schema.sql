@@ -43,6 +43,10 @@ create table if not exists public.profiles (
   updated_at timestamptz not null default now()
 );
 
+alter table public.profiles
+  add column if not exists email_verified boolean not null default false,
+  add column if not exists phone_verified boolean not null default false;
+
 create table if not exists public.customer_profiles (
   user_id uuid primary key references public.profiles(id) on delete cascade,
   default_pickup_address text,

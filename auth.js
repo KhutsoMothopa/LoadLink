@@ -36,6 +36,7 @@ const submitAuthBtn = document.querySelector("#submitAuthBtn");
 const loginModeBtn = document.querySelector("#loginModeBtn");
 const registerModeBtn = document.querySelector("#registerModeBtn");
 const profileFields = document.querySelector("#profileFields");
+const verificationNote = document.querySelector("#verificationNote");
 const driverFields = document.querySelector("#driverFields");
 const roleCards = document.querySelectorAll("[data-role-card]");
 const authModal = document.querySelector("#authModal");
@@ -74,6 +75,7 @@ function setMode(nextMode) {
     : `${roleLabels[selectedRole]} ${registering ? "registration" : "login"}`;
   submitAuthBtn.textContent = resetting ? "Update password" : registering ? "Create account" : "Login";
   profileFields.hidden = !registering;
+  if (verificationNote) verificationNote.hidden = !registering;
   driverFields.hidden = !(registering && isDriver);
   if (emailField) emailField.hidden = resetting;
   if (emailInput) emailInput.required = !resetting;
@@ -207,6 +209,11 @@ async function checkSetup() {
     setAccessFailed();
   }
 
+  if (params.get("verified") === "email") {
+    setStatus("Email verified", "active");
+    authHelp.textContent = "Your email has been verified. You can now log in to your LoadLink account.";
+  }
+
   if (recoveryError()) {
     openAuth("login");
     setStatus("Reset link expired", "warning");
@@ -265,6 +272,13 @@ async function handleSubmit(event) {
     if (!profile) {
       setStatus("Check email confirmation", "warning");
       authHelp.textContent = "Supabase may require email confirmation before first login.";
+      return;
+    }
+
+    if (profile.pendingEmailVerification) {
+      setStatus("Verify email", "warning");
+      authHelp.textContent = "We sent a verification link to your email address. Confirm your email, then return here to log in.";
+      setMode("login");
       return;
     }
 

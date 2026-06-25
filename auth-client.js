@@ -169,10 +169,17 @@
 
   async function signUp({ role, fullName, email, phone, password, driver }) {
     const supabase = await client();
+    const productionConfirmUrl = "https://www.load-link.co.za/auth?open=login&verified=email";
+    const localConfirmUrl = `${window.location.origin}/auth.html?open=login&verified=email`;
+    const emailRedirectTo = window.location.hostname.endsWith("load-link.co.za")
+      ? productionConfirmUrl
+      : localConfirmUrl;
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
+        emailRedirectTo,
         data: {
           role,
           full_name: fullName,
@@ -194,7 +201,11 @@
     }
 
     if (!data.session) {
-      throw new Error("Account created. Check email confirmation before signing in.");
+      return {
+        role,
+        email,
+        pendingEmailVerification: true
+      };
     }
 
     const profile = {

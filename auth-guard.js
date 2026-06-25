@@ -5,6 +5,10 @@
 
   if (!requiredRole || !window.LoadLinkAuth) return;
 
+  function revealPage() {
+    document.body.classList.add("auth-ready");
+  }
+
   function setAuthStatus(label, className = "neutral") {
     if (!authStatus) return;
     authStatus.textContent = label;
@@ -16,6 +20,7 @@
 
     if (!settings.configured) {
       setAuthStatus("Auth setup needed", "warning");
+      revealPage();
       return;
     }
 
@@ -33,8 +38,10 @@
     }
 
     setAuthStatus(`${profile.full_name || profile.email}`, "active");
+    revealPage();
   } catch (error) {
     setAuthStatus("Auth unavailable", "warning");
+    revealPage();
   }
 
   signOutButton?.addEventListener("click", async () => {

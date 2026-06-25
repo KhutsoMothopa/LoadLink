@@ -1216,6 +1216,29 @@ body.auth-modal-open {
   background: var(--charcoal);
 }
 
+.auth-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -10px;
+}
+
+.auth-link-button {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--steel-dark);
+  font-weight: 900;
+}
+
+.auth-link-button:hover {
+  color: var(--accent-dark);
+}
+
+.auth-link-button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
 .register-fields[hidden],
 .driver-register-fields[hidden] {
   display: none;

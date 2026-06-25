@@ -235,6 +235,23 @@
     return profile;
   }
 
+  async function requestPasswordReset(email) {
+    const supabase = await client();
+    const redirectTo = `${window.location.origin}/auth.html?mode=reset`;
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+
+    if (error) throw error;
+  }
+
+  async function updatePassword(password) {
+    const supabase = await client();
+    const { data, error } = await supabase.auth.updateUser({ password });
+
+    if (error) throw error;
+    if (data?.session) saveSession(data.session);
+    return data?.user || null;
+  }
+
   async function signOut() {
     try {
       const supabase = await client();
@@ -253,6 +270,8 @@
     currentProfile,
     signIn,
     signUp,
+    requestPasswordReset,
+    updatePassword,
     signOut,
     clearSession
   };

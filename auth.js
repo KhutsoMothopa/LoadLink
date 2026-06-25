@@ -43,8 +43,12 @@ const authMenuTriggers = document.querySelectorAll("[data-auth-menu-trigger]");
 const authMenuPanels = document.querySelectorAll("[data-auth-menu-panel]");
 const authRoleOpeners = document.querySelectorAll("[data-auth-role-open]");
 const authCloseBtn = document.querySelector("#authCloseBtn");
+const emailInput = document.querySelector("#email");
+const emailField = emailInput?.closest("label");
 const passwordInput = document.querySelector("#password");
 const passwordToggle = document.querySelector("#passwordToggle");
+const passwordFieldLabel = document.querySelector("#passwordFieldLabel");
+const forgotPasswordBtn = document.querySelector("#forgotPasswordBtn");
 
 let mode = "login";
 
@@ -59,20 +63,30 @@ function setAccessFailed(message = "The login details do not match this access a
 }
 
 function setMode(nextMode) {
-  mode = selectedRole === "dispatcher" ? "login" : nextMode;
+  mode = nextMode === "reset" ? "reset" : selectedRole === "dispatcher" ? "login" : nextMode;
   const registering = mode === "register";
+  const resetting = mode === "reset";
   const isDriver = selectedRole === "driver";
 
   authModal.dataset.mode = mode;
-  formTitle.textContent = `${roleLabels[selectedRole]} ${registering ? "registration" : "login"}`;
-  submitAuthBtn.textContent = registering ? "Create account" : "Login";
+  formTitle.textContent = resetting
+    ? "Reset password"
+    : `${roleLabels[selectedRole]} ${registering ? "registration" : "login"}`;
+  submitAuthBtn.textContent = resetting ? "Update password" : registering ? "Create account" : "Login";
   profileFields.hidden = !registering;
   driverFields.hidden = !(registering && isDriver);
+  if (emailField) emailField.hidden = resetting;
+  if (emailInput) emailInput.required = !resetting;
+  if (passwordFieldLabel) passwordFieldLabel.textContent = resetting ? "New password" : "Password";
+  if (passwordInput) passwordInput.autocomplete = resetting || registering ? "new-password" : "current-password";
   if (registerModeBtn) registerModeBtn.disabled = selectedRole === "dispatcher";
   if (loginModeBtn) loginModeBtn.className = registering ? "secondary-dark-button" : "primary-button";
   if (registerModeBtn) registerModeBtn.className = registering ? "primary-button" : "secondary-dark-button";
+  if (forgotPasswordBtn) forgotPasswordBtn.hidden = registering || resetting;
 
-  authHelp.textContent = selectedRole === "dispatcher"
+  authHelp.textContent = resetting
+    ? "Enter a new password for your LoadLink account."
+    : selectedRole === "dispatcher"
     ? "Dispatcher accounts are created privately by the platform owner and cannot self-register here."
     : registering
       ? "Create your profile once. After login, your platform will only show records linked to your account."
@@ -118,6 +132,36 @@ function toggleAuthMenu(menuName) {
   }
 }
 
+function isPasswordRecoveryFlow() {
+  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  return params.get("type") === "recovery" || hashParams.get("type") === "recovery" || params.get("mode") === "reset";
+}
+
+async function handlePasswordResetRequest() {
+  const email = formValue("email");
+
+  if (!email) {
+    setStatus("Email required", "warning");
+    authHelp.textContent = "Enter the email address linked to your LoadLink account, then request a reset link.";
+    document.querySelector("#email")?.focus();
+    return;
+  }
+
+  forgotPasswordBtn.disabled = true;
+  setStatus("Sending reset link", "warning");
+
+  try {
+    await window.LoadLinkAuth.requestPasswordReset(email);
+    setStatus("Reset email sent", "active");
+    authHelp.textContent = "If an account exists for that email address, a password reset link has been sent.";
+  } catch (error) {
+    setStatus("Reset unavailable", "warning");
+    authHelp.textContent = error.message || "Password reset could not be started right now.";
+  } finally {
+    forgotPasswordBtn.disabled = false;
+  }
+}
+
 function openAuth(nextMode = "login", nextRole = selectedRole) {
   updateRole(nextRole);
 
@@ -139,7 +183,7 @@ function closeAuth() {
 
 async function checkSetup() {
   updateRole(selectedRole);
-  setMode(params.get("mode") === "register" ? "register" : "login");
+  setMode(isPasswordRecoveryFlow() ? "reset" : params.get("mode") === "register" ? "register" : "login");
 
   try {
     const settings = await window.LoadLinkAuth.config();
@@ -158,6 +202,12 @@ async function checkSetup() {
     setAccessFailed();
   }
 
+  if (isPasswordRecoveryFlow()) {
+    openAuth("reset");
+    setStatus("Reset password", "warning");
+    return;
+  }
+
   if (params.get("mode") === "register" || params.get("open") === "login") {
     openAuth(params.get("mode") === "register" ? "register" : "login");
   }
@@ -172,6 +222,15 @@ async function handleSubmit(event) {
     const email = formValue("email");
     const password = formValue("password");
     let profile;
+
+    if (mode === "reset") {
+      await window.LoadLinkAuth.updatePassword(password);
+      setMode("login");
+      passwordInput.value = "";
+      setStatus("Password updated", "active");
+      authHelp.textContent = "Your password has been updated. You can now log in with the new password.";
+      return;
+    }
 
     if (mode === "register") {
       profile = await window.LoadLinkAuth.signUp({
@@ -249,5 +308,6 @@ passwordToggle?.addEventListener("click", () => {
 
 loginModeBtn?.addEventListener("click", () => setMode("login"));
 registerModeBtn?.addEventListener("click", () => setMode("register"));
+forgotPasswordBtn?.addEventListener("click", handlePasswordResetRequest);
 authForm.addEventListener("submit", handleSubmit);
 checkSetup();

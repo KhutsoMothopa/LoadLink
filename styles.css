@@ -166,29 +166,6 @@ button {
   color: currentColor;
 }
 
-.globe-icon {
-  border: 2px solid currentColor;
-  border-radius: 999px;
-}
-
-.globe-icon::before {
-  content: "";
-  position: absolute;
-  inset: 2px 5px;
-  border-left: 1px solid currentColor;
-  border-right: 1px solid currentColor;
-  border-radius: 999px;
-}
-
-.globe-icon::after {
-  content: "";
-  position: absolute;
-  left: 2px;
-  right: 2px;
-  top: 7px;
-  border-top: 1px solid currentColor;
-}
-
 .help-icon {
   border: 2px solid currentColor;
   border-radius: 999px;
@@ -1355,7 +1332,7 @@ a:focus-visible {
 }
 
 @media (max-width: 520px) {
-  .auth-utility-link:nth-child(n+2) span:last-child {
+  .auth-utility-link span:last-child {
     display: none;
   }
 

@@ -53,6 +53,11 @@ function setStatus(label, className = "neutral") {
   authStatus.className = `status-pill ${className}`;
 }
 
+function setAccessFailed(message = "The login details do not match this access area.") {
+  setStatus("Access failed", "warning");
+  authHelp.textContent = message;
+}
+
 function setMode(nextMode) {
   mode = selectedRole === "dispatcher" ? "login" : nextMode;
   const registering = mode === "register";
@@ -150,7 +155,7 @@ async function checkSetup() {
   }
 
   if (params.get("reason") === "role") {
-    setStatus("Wrong account role", "warning");
+    setAccessFailed();
   }
 
   if (params.get("mode") === "register" || params.get("open") === "login") {
@@ -194,16 +199,14 @@ async function handleSubmit(event) {
 
     if (profile.role !== selectedRole) {
       await window.LoadLinkAuth.signOut();
-      setStatus("Wrong account role", "warning");
-      authHelp.textContent = `This account is registered as ${profile.role}, not ${selectedRole}.`;
+      setAccessFailed();
       return;
     }
 
     setStatus("Access granted", "active");
     window.location.href = nextPathForRole(selectedRole);
   } catch (error) {
-    setStatus("Access failed", "warning");
-    authHelp.textContent = error.message;
+    setAccessFailed(error.message);
   } finally {
     submitAuthBtn.disabled = false;
   }

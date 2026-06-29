@@ -62,7 +62,7 @@ function requestCard(request) {
   const nearest = request.driverCandidates[0];
   const proof = request.payment?.proof;
   const proofLink = proof?.dataUrl
-    ? `<a class="header-text-action" href="${proof.dataUrl}" target="_blank" rel="noopener">View proof</a>`
+    ? `<button class="header-text-action" type="button" data-action="view-proof" data-request="${request.id}">View proof</button>`
     : `<span>${proof?.fileName || "Not uploaded"}</span>`;
 
   return `
@@ -375,13 +375,65 @@ async function confirmPayment(requestId) {
   }
 }
 
+function dataUrlToBlob(dataUrl) {
+  const match = String(dataUrl || "").match(/^data:([^;,]+)?(;base64)?,(.*)$/);
+
+  if (!match) {
+    throw new Error("Payment proof file is not available");
+  }
+
+  const mimeType = match[1] || "application/octet-stream";
+  const isBase64 = Boolean(match[2]);
+  const body = isBase64 ? atob(match[3]) : decodeURIComponent(match[3]);
+  const bytes = new Uint8Array(body.length);
+
+  for (let index = 0; index < body.length; index += 1) {
+    bytes[index] = body.charCodeAt(index);
+  }
+
+  return new Blob([bytes], { type: mimeType });
+}
+
+function openProof(requestId) {
+  const request = dispatcherRequests.get(requestId);
+  const proof = request?.payment?.proof;
+
+  if (!proof?.dataUrl) {
+    setStatus("#dispatcherQueueStatus", "Proof file unavailable", "warning");
+    return;
+  }
+
+  try {
+    const blob = dataUrlToBlob(proof.dataUrl);
+    const url = URL.createObjectURL(blob);
+    const opened = window.open(url, "_blank");
+
+    if (!opened) {
+      setStatus("#dispatcherQueueStatus", "Allow popups to view proof", "warning");
+      URL.revokeObjectURL(url);
+      return;
+    }
+
+    opened.opener = null;
+    window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  } catch (error) {
+    setStatus("#dispatcherQueueStatus", "Proof file could not be opened", "warning");
+  }
+}
+
 if (dispatcherRequestList) {
   dispatcherRequestList.addEventListener("click", (event) => {
     const button = event.target.closest("button[data-action='assign']");
     const confirmButton = event.target.closest("button[data-action='confirm-payment']");
+    const proofButton = event.target.closest("button[data-action='view-proof']");
 
     if (confirmButton) {
       confirmPayment(confirmButton.dataset.request);
+      return;
+    }
+
+    if (proofButton) {
+      openProof(proofButton.dataset.request);
       return;
     }
 

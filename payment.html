@@ -44,7 +44,32 @@
         </a>
       </nav>
       <div class="header-actions">
-        <span class="status-pill neutral" data-auth-status>Account</span>
+        <div class="account-menu">
+          <button class="status-pill neutral account-menu-trigger" type="button" data-account-menu-trigger aria-expanded="false">
+            <span data-auth-status>Account</span>
+            <svg class="account-chevron" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6 9l6 6 6-6"></path>
+            </svg>
+          </button>
+          <div class="account-menu-panel" data-account-menu-panel hidden>
+            <p>Customer account</p>
+            <a href="customer-profile.html">
+              <svg class="header-action-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="8" r="4"></circle>
+                <path d="M4 21a8 8 0 0 1 16 0"></path>
+              </svg>
+              <span>Profile</span>
+            </a>
+            <button type="button" data-sign-out>
+              <svg class="header-action-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M10 17l5-5-5-5"></path>
+                <path d="M15 12H3"></path>
+                <path d="M21 3v18h-8"></path>
+              </svg>
+              <span>Sign out</span>
+            </button>
+          </div>
+        </div>
         <a class="header-text-action" href="tracking.html">
           <svg class="header-action-icon" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 21s6-5.1 6-11a6 6 0 1 0-12 0c0 5.9 6 11 6 11z"></path>
@@ -52,14 +77,6 @@
           </svg>
           <span>Track request</span>
         </a>
-        <button class="header-text-action subtle-action" type="button" data-sign-out>
-          <svg class="header-action-icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M10 17l5-5-5-5"></path>
-            <path d="M15 12H3"></path>
-            <path d="M21 3v18h-8"></path>
-          </svg>
-          <span>Sign out</span>
-        </button>
       </div>
     </header>
 
@@ -156,8 +173,8 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="auth-client.js?v=20260625-auth-4"></script>
-    <script src="auth-guard.js?v=20260625-auth-4"></script>
+    <script src="auth-client.js?v=20260629-profile-menu"></script>
+    <script src="auth-guard.js?v=20260629-profile-menu"></script>
     <script src="ops-storage.js"></script>
     <script src="payment.js"></script>
   </body>

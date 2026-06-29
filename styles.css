@@ -159,6 +159,75 @@ button {
   min-width: max-content;
 }
 
+.account-menu {
+  position: relative;
+}
+
+.account-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 0;
+  white-space: nowrap;
+}
+
+.account-chevron {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.account-menu-panel {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  z-index: 80;
+  width: 220px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 24px 60px rgba(17, 24, 39, 0.18);
+}
+
+.account-menu-panel[hidden] {
+  display: none;
+}
+
+.account-menu-panel p {
+  margin: 4px 8px 8px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.account-menu-panel a,
+.account-menu-panel button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+  font-weight: 900;
+}
+
+.account-menu-panel a:hover,
+.account-menu-panel button:hover {
+  background: #f4f6f8;
+}
+
 .subtle-action {
   color: var(--muted);
 }

@@ -20,7 +20,7 @@ function roleForPath(path) {
     .toLowerCase();
 
   if (!cleanPath || cleanPath === "index.html") return "customer";
-  if (["payment", "payment.html", "tracking", "tracking.html", "gateway", "gateway.html"].includes(cleanPath)) return "customer";
+  if (["payment", "payment.html", "tracking", "tracking.html", "gateway", "gateway.html", "customer-profile", "customer-profile.html"].includes(cleanPath)) return "customer";
   if (["driver", "driver.html"].includes(cleanPath)) return "driver";
   if (["dispatcher", "dispatcher.html", "dispatcher-drivers", "dispatcher-drivers.html"].includes(cleanPath)) return "dispatcher";
   return "";

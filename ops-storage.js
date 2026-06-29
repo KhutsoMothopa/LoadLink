@@ -183,7 +183,7 @@
 
   function paidRequests(apiRequests = []) {
     return mergeBookings(apiRequests)
-      .filter((booking) => booking.payment?.status === "paid" && booking.status !== "delivered")
+      .filter((booking) => ["proof_submitted", "paid"].includes(booking.payment?.status) && booking.status !== "delivered")
       .filter((booking) => !hasPrototypeDriverAssignment(booking))
       .map((booking) => {
         const storedCandidates = (booking.driverCandidates || []).filter((driver) => !isPrototypeDriver(driver));
@@ -193,6 +193,32 @@
           driverCandidates: storedCandidates.length ? storedCandidates : driverCandidates(booking)
         };
       });
+  }
+
+  function confirmPayment(id) {
+    const bookings = getBookings();
+    const booking = bookings.find((item) => item.id === id);
+
+    if (!booking) throw new Error("Request not found in the dispatcher workspace");
+
+    const now = new Date().toISOString();
+    booking.payment = {
+      ...(booking.payment || {}),
+      status: "paid",
+      method: booking.payment?.method || "manual_eft",
+      reference: booking.payment?.reference || id,
+      paidAt: now
+    };
+    booking.dispatcher = {
+      ...(booking.dispatcher || {}),
+      notified: true,
+      name: "LoadLink Dispatch Desk",
+      notifiedAt: now,
+      searchStartedAt: now
+    };
+    pushStatus(booking, "dispatcher_notified", "dispatcher");
+    saveBookings(bookings);
+    return booking;
   }
 
   function pushStatus(booking, status, actor) {
@@ -297,6 +323,7 @@
     saveBooking,
     mergeBookings,
     paidRequests,
+    confirmPayment,
     assignBooking,
     driverJobs,
     respondToJob,

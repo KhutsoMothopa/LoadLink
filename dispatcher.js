@@ -8,6 +8,7 @@ let isAssigningRequest = false;
 const dispatcherRequests = new Map();
 
 const statusLabels = {
+  awaiting_payment: "Payment proof pending review",
   dispatcher_notified: "Ready for assignment",
   driver_assigned: "Assigned to driver",
   driver_en_route: "Driver accepted",
@@ -55,8 +56,14 @@ function candidateOptions(request) {
 
 function requestCard(request) {
   const assignedDriver = request.assignedDriver;
-  const readyForAssignment = request.status === "dispatcher_notified" || request.status === "driver_assigned";
+  const paymentConfirmed = request.payment?.status === "paid";
+  const proofSubmitted = request.payment?.status === "proof_submitted";
+  const readyForAssignment = paymentConfirmed && (request.status === "dispatcher_notified" || request.status === "driver_assigned");
   const nearest = request.driverCandidates[0];
+  const proof = request.payment?.proof;
+  const proofLink = proof?.dataUrl
+    ? `<a class="header-text-action" href="${proof.dataUrl}" target="_blank" rel="noopener">View proof</a>`
+    : `<span>${proof?.fileName || "Not uploaded"}</span>`;
 
   return `
     <article class="driver-job-card dispatcher-request-card">
@@ -65,7 +72,7 @@ function requestCard(request) {
           <p class="section-kicker">${request.id}</p>
           <h3>${statusLabels[request.status] || request.status}</h3>
         </div>
-        <span class="status-pill ${request.status === "dispatcher_notified" ? "warning" : "active"}">${request.vehicle.label}</span>
+        <span class="status-pill ${paymentConfirmed ? "active" : "warning"}">${paymentConfirmed ? "Payment confirmed" : "Proof submitted"}</span>
       </div>
 
       <dl class="ops-summary">
@@ -82,8 +89,16 @@ function requestCard(request) {
           <dd>${request.dropoffAddress || request.dropoff.address}</dd>
         </div>
         <div>
-          <dt>Paid amount</dt>
+          <dt>Amount due</dt>
           <dd>${formatRand(request.price)}</dd>
+        </div>
+        <div>
+          <dt>Proof of payment</dt>
+          <dd>${proofLink}</dd>
+        </div>
+        <div>
+          <dt>Payment note</dt>
+          <dd>${proof?.note || request.payment?.reference || "No note provided"}</dd>
         </div>
         <div>
           <dt>Suggested driver</dt>
@@ -94,6 +109,15 @@ function requestCard(request) {
           <dd>${assignedDriver ? `${assignedDriver.name}, ${assignedDriver.distanceToPickup} km` : "Not assigned"}</dd>
         </div>
       </dl>
+
+      ${proofSubmitted ? `
+        <div class="dispatcher-assignment-row">
+          <p class="fine-print">Confirm the payment proof before assigning this request to a driver.</p>
+          <button class="primary-button" type="button" data-action="confirm-payment" data-request="${request.id}">
+            Confirm payment
+          </button>
+        </div>
+      ` : ""}
 
       <div class="dispatcher-assignment-row">
         <label>
@@ -113,13 +137,13 @@ function requestCard(request) {
 function renderRequests(requests) {
   if (!dispatcherRequestList) return;
 
-  const openRequests = requests.filter((request) => request.status === "dispatcher_notified");
+  const openRequests = requests.filter((request) => ["proof_submitted", "paid"].includes(request.payment?.status));
   dispatcherRequests.clear();
   requests.forEach((request) => dispatcherRequests.set(request.id, request));
 
   if (!requests.length) {
-    setStatus("#dispatcherQueueStatus", "No paid requests", "neutral");
-    dispatcherRequestList.innerHTML = `<p class="fine-print">No paid requests are waiting right now.</p>`;
+    setStatus("#dispatcherQueueStatus", "No payment proofs", "neutral");
+    dispatcherRequestList.innerHTML = `<p class="fine-print">No payment proofs are waiting right now.</p>`;
     return;
   }
 
@@ -315,9 +339,52 @@ async function assignRequest(requestId) {
   }
 }
 
+async function confirmPayment(requestId) {
+  const button = document.querySelector(`[data-action="confirm-payment"][data-request="${requestId}"]`);
+  const bookingSnapshot = dispatcherRequests.get(requestId);
+
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Confirming...";
+  }
+  setStatus("#dispatcherQueueStatus", "Confirming payment", "warning");
+
+  try {
+    const payload = await apiRequest(`/api/dispatcher/requests/${requestId}/confirm-payment`, {
+      method: "POST",
+      body: JSON.stringify({
+        reference: bookingSnapshot?.payment?.reference || requestId,
+        bookingSnapshot
+      })
+    });
+
+    window.LoadLinkOps?.saveBooking(payload.booking);
+    renderRequests(window.LoadLinkOps?.paidRequests() || [payload.booking]);
+    setStatus("#dispatcherQueueStatus", "Payment confirmed", "active");
+  } catch (error) {
+    try {
+      const booking = window.LoadLinkOps?.confirmPayment(requestId);
+      renderRequests(window.LoadLinkOps?.paidRequests() || [booking]);
+      setStatus("#dispatcherQueueStatus", "Payment confirmed locally", "active");
+    } catch (localError) {
+      setStatus("#dispatcherQueueStatus", "Confirmation failed", "warning");
+      if (button) button.disabled = false;
+    }
+  } finally {
+    if (button) button.textContent = "Confirm payment";
+  }
+}
+
 if (dispatcherRequestList) {
   dispatcherRequestList.addEventListener("click", (event) => {
     const button = event.target.closest("button[data-action='assign']");
+    const confirmButton = event.target.closest("button[data-action='confirm-payment']");
+
+    if (confirmButton) {
+      confirmPayment(confirmButton.dataset.request);
+      return;
+    }
+
     if (!button) return;
 
     assignRequest(button.dataset.request);

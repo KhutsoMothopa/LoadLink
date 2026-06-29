@@ -61,9 +61,14 @@ function renderBooking(booking) {
   saveActiveBooking(booking);
   const driver = booking.assignedDriver;
   const paid = booking.payment?.status === "paid";
+  const proofSubmitted = booking.payment?.status === "proof_submitted";
 
   renderTimeline(booking.status);
-  setPill(document.querySelector("#paymentStatus"), paid ? "Paid" : "Payment due", paid ? "complete" : "warning");
+  setPill(
+    document.querySelector("#paymentStatus"),
+    paid ? "Paid" : proofSubmitted ? "Proof under review" : "Payment due",
+    paid ? "complete" : "warning"
+  );
   document.querySelector("#trackingIntro").textContent = `Tracking booking ${booking.id}. This page refreshes automatically.`;
   document.querySelector("#bookingId").textContent = booking.id;
   document.querySelector("#dispatchNotice").textContent = booking.dispatcher?.notified
@@ -75,7 +80,7 @@ function renderBooking(booking) {
   document.querySelector("#pickupAddress").textContent = booking.pickupAddress || booking.pickup?.address || "Not available";
   document.querySelector("#dropoffAddress").textContent = booking.dropoffAddress || booking.dropoff?.address || "Not available";
   document.querySelector("#scheduledPickup").textContent = `${booking.pickupDate}, ${booking.pickupTime}`;
-  document.querySelector("#paymentReference").textContent = booking.payment?.reference || "Pending";
+  document.querySelector("#paymentReference").textContent = booking.payment?.reference || (proofSubmitted ? "Proof submitted" : "Pending");
 }
 
 async function refreshTracking() {

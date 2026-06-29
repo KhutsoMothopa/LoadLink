@@ -1,8 +1,10 @@
+const proofForm = document.querySelector("#proofForm");
 const payBtn = document.querySelector("#payBtn");
+const proofFile = document.querySelector("#proofFile");
+const proofNote = document.querySelector("#proofNote");
 const params = new URLSearchParams(window.location.search);
 const bookingId = params.get("bookingId");
 const activeBookingKey = "loadlinkActiveBooking";
-const checkoutSessionKey = "loadlinkCheckoutSession";
 
 let activeBooking = null;
 
@@ -41,10 +43,6 @@ function saveActiveBooking(booking) {
   window.LoadLinkOps?.saveBooking(booking);
 }
 
-function selectedMethod() {
-  return document.querySelector("input[name='paymentMethod']:checked")?.value || "card";
-}
-
 function setPaymentStatus(label, className) {
   const pill = document.querySelector("#paymentStatus");
   pill.textContent = label;
@@ -57,18 +55,42 @@ function renderEmpty() {
   payBtn.disabled = true;
 }
 
+function proofStatusFor(booking) {
+  if (booking.payment?.status === "paid") {
+    return { label: "Payment confirmed", className: "complete", button: "Payment confirmed", disabled: true };
+  }
+
+  if (booking.payment?.status === "proof_submitted") {
+    return { label: "Proof submitted", className: "warning", button: "Proof waiting for dispatcher", disabled: true };
+  }
+
+  return { label: "Awaiting proof", className: "warning", button: "Submit proof to dispatch", disabled: false };
+}
+
 function renderBooking(booking) {
   saveActiveBooking(booking);
   document.querySelector("#bookingId").textContent = booking.id;
+  document.querySelector("#bankReference").textContent = booking.id;
   document.querySelector("#paymentAmount").textContent = formatRand(booking.price);
   document.querySelector("#pickupAddress").textContent = booking.pickupAddress || booking.pickup?.address || "Not available";
   document.querySelector("#dropoffAddress").textContent = booking.dropoffAddress || booking.dropoff?.address || "Not available";
   document.querySelector("#vehicleText").textContent = booking.vehicle?.label || "Not available";
 
-  const paid = booking.payment?.status === "paid";
-  setPaymentStatus(paid ? "Paid" : "Awaiting payment", paid ? "complete" : "warning");
-  payBtn.disabled = paid;
-  payBtn.textContent = paid ? "Payment received" : "Continue to secure checkout";
+  const status = proofStatusFor(booking);
+  setPaymentStatus(status.label, status.className);
+  payBtn.disabled = status.disabled;
+  payBtn.textContent = status.button;
+  proofFile.disabled = status.disabled;
+  proofNote.disabled = status.disabled;
+}
+
+function readProofFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error("Proof file could not be read"));
+    reader.readAsDataURL(file);
+  });
 }
 
 async function loadPayment() {
@@ -89,7 +111,8 @@ async function loadPayment() {
     renderBooking(payload.booking);
   } catch (error) {
     if (fallbackBooking) {
-      setPaymentStatus("Awaiting payment", "warning");
+      const status = proofStatusFor(fallbackBooking);
+      setPaymentStatus(status.label, status.className);
       return;
     }
 
@@ -98,58 +121,78 @@ async function loadPayment() {
   }
 }
 
-async function startCheckout() {
+async function submitProof(event) {
+  event.preventDefault();
+  const booking = activeBooking || storedBooking();
+  const file = proofFile.files[0];
+
+  if (!booking) {
+    renderEmpty();
+    return;
+  }
+
+  if (!file) {
+    setPaymentStatus("Proof required", "warning");
+    return;
+  }
+
+  if (file.size > 650_000) {
+    setPaymentStatus("File too large", "warning");
+    document.querySelector("#paymentIntro").textContent = "Please upload a smaller proof file for now. PDF or image under 650 KB works best.";
+    return;
+  }
+
   payBtn.disabled = true;
-  payBtn.textContent = "Opening checkout...";
+  payBtn.textContent = "Uploading proof...";
 
   try {
-    const booking = activeBooking || storedBooking();
-
-    if (!booking) {
-      renderEmpty();
-      return;
-    }
-
-    const payload = await apiRequest("/api/payments/checkout", {
+    const proofDataUrl = await readProofFile(file);
+    const payload = await apiRequest(`/api/bookings/${booking.id}/payment-proof`, {
       method: "POST",
       body: JSON.stringify({
-        bookingId: booking.id,
-        method: selectedMethod(),
-        bookingSnapshot: booking
+        bookingSnapshot: booking,
+        note: proofNote.value.trim(),
+        proof: {
+          fileName: file.name,
+          fileType: file.type || "application/octet-stream",
+          fileSize: file.size,
+          dataUrl: proofDataUrl
+        }
       })
     });
 
-    window.sessionStorage.setItem(checkoutSessionKey, JSON.stringify(payload.session));
-    saveActiveBooking(payload.session.booking || booking);
-    window.location.href = payload.session.redirectUrl;
+    saveActiveBooking(payload.booking);
+    window.location.href = "tracking.html";
   } catch (error) {
-    const booking = activeBooking || storedBooking();
+    const now = new Date().toISOString();
+    const localBooking = {
+      ...booking,
+      status: "awaiting_payment",
+      payment: {
+        ...(booking.payment || {}),
+        status: "proof_submitted",
+        method: "manual_eft",
+        reference: booking.id,
+        proof: {
+          fileName: file.name,
+          fileType: file.type || "application/octet-stream",
+          fileSize: file.size,
+          note: proofNote.value.trim(),
+          submittedAt: now,
+          dataUrl: await readProofFile(file)
+        }
+      },
+      updatedAt: now,
+      statusHistory: [
+        ...(booking.statusHistory || []),
+        { status: "payment_proof_submitted", at: now, actor: "customer" }
+      ]
+    };
 
-    if (booking) {
-      const session = {
-        id: `CHK-${Date.now().toString().slice(-8)}`,
-        bookingId: booking.id,
-        provider: "LoadLink Secure Checkout",
-        method: selectedMethod(),
-        amount: booking.price,
-        currency: "ZAR",
-        status: "pending",
-        createdAt: new Date().toISOString(),
-        redirectUrl: `gateway.html?sessionId=CHK-${Date.now().toString().slice(-8)}`
-      };
-
-      session.redirectUrl = `gateway.html?sessionId=${session.id}`;
-      window.sessionStorage.setItem(checkoutSessionKey, JSON.stringify(session));
-      saveActiveBooking(booking);
-      window.location.href = session.redirectUrl;
-      return;
-    }
-
-    setPaymentStatus("Checkout failed", "warning");
-    payBtn.disabled = false;
-    payBtn.textContent = "Continue to secure checkout";
+    saveActiveBooking(localBooking);
+    window.location.href = "tracking.html";
   }
 }
 
-payBtn.addEventListener("click", startCheckout);
+proofForm.addEventListener("submit", submitProof);
 loadPayment();

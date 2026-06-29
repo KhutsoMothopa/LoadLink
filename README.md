@@ -8,8 +8,8 @@ Customer website for a bakkie and truck courier marketplace. LoadLink lets custo
 - Distance-based price calculation
 - Vehicle and load type selection
 - Customer confirmation flow
-- Dedicated payment method page before dispatch notification
-- Gateway-style checkout session before payment confirmation
+- Manual payment proof upload before dispatch review
+- Dispatcher payment confirmation before driver assignment
 - Dispatcher email notification after confirmed payment
 - Dedicated customer tracking page
 - Separate driver website for assigned job responses
@@ -52,16 +52,10 @@ Tracking is available at:
 http://127.0.0.1:4173/tracking.html
 ```
 
-Payment is available at:
+Manual payment proof upload is available at:
 
 ```text
 http://127.0.0.1:4173/payment.html
-```
-
-Secure checkout is available after a payment session is created:
-
-```text
-http://127.0.0.1:4173/gateway.html?sessionId=...
 ```
 
 Driver jobs are available at:
@@ -155,10 +149,9 @@ Customers and drivers can register from the account page. Dispatcher accounts sh
 - `POST /api/quote`
 - `POST /api/bookings`
 - `GET /api/bookings/current`
+- `POST /api/bookings/:id/payment-proof`
+- `POST /api/dispatcher/requests/:id/confirm-payment`
 - `POST /api/bookings/:id/payment`
-- `POST /api/payments/checkout`
-- `GET /api/payments/sessions/:id`
-- `POST /api/payments/sessions/:id/confirm`
 - `GET /api/driver/profile`
 - `PATCH /api/driver/profile`
 - `GET /api/driver/earnings?period=week|month|year`

@@ -478,7 +478,7 @@ function smtpEscapeBody(value) {
 function buildDispatcherEmail(booking) {
   const subject = `New paid LoadLink request ${booking.id}`;
   const text = [
-    "A customer has paid for a LoadLink courier request and it is ready for dispatch.",
+    "A dispatcher has confirmed payment for a LoadLink courier request and it is ready for dispatch.",
     "",
     `Booking ID: ${booking.id}`,
     `Customer: ${booking.customerName}`,
@@ -804,7 +804,7 @@ function listDispatcherRequests() {
   const bookings = readBookings();
   return bookings
     .filter((booking) =>
-      booking.payment?.status === "paid" &&
+      ["proof_submitted", "paid"].includes(booking.payment?.status) &&
       booking.status !== "delivered"
     )
     .filter((booking) => !isPrototypeDriverId(booking.assignedDriver?.id))
@@ -955,8 +955,9 @@ async function markBookingPaid(id, input = {}) {
 
   if (!wasAlreadyPaid) {
     booking.payment = {
+      ...(booking.payment || {}),
       status: "paid",
-      method: input.method || "card",
+      method: input.method || booking.payment?.method || "manual_eft",
       reference: input.reference || `PAY-${Date.now().toString().slice(-7)}`,
       paidAt: now
     };
@@ -992,6 +993,44 @@ async function markBookingPaid(id, input = {}) {
 
   writeBookings(bookings);
 
+  return booking;
+}
+
+function submitPaymentProof(id, input = {}) {
+  const bookings = readBookings();
+  let booking = bookings.find((item) => item.id === id);
+
+  if (!booking && input.bookingSnapshot) {
+    booking = restoreBookingFromSnapshot(input.bookingSnapshot);
+    bookings.push(booking);
+  }
+
+  if (!booking) return null;
+
+  if (booking.payment?.status === "paid") return booking;
+
+  const proof = input.proof || {};
+  const now = new Date().toISOString();
+
+  booking.payment = {
+    ...(booking.payment || {}),
+    status: "proof_submitted",
+    method: "manual_eft",
+    reference: booking.id,
+    proof: {
+      fileName: String(proof.fileName || "proof-of-payment").slice(0, 120),
+      fileType: String(proof.fileType || "application/octet-stream").slice(0, 80),
+      fileSize: Number(proof.fileSize || 0),
+      dataUrl: String(proof.dataUrl || "").slice(0, 900000),
+      note: String(input.note || "").trim().slice(0, 500),
+      submittedAt: now
+    }
+  };
+  booking.updatedAt = now;
+  booking.statusHistory = booking.statusHistory || [];
+  booking.statusHistory.push({ status: "payment_proof_submitted", at: now, actor: "customer" });
+
+  writeBookings(bookings);
   return booking;
 }
 
@@ -1194,6 +1233,24 @@ async function handleApi(request, response, pathname) {
       return;
     }
 
+    const dispatcherConfirmPaymentMatch = pathname.match(/^\/api\/dispatcher\/requests\/([^/]+)\/confirm-payment$/);
+    if (request.method === "POST" && dispatcherConfirmPaymentMatch) {
+      const body = await readJsonBody(request);
+      const booking = await markBookingPaid(dispatcherConfirmPaymentMatch[1], {
+        method: "manual_eft",
+        reference: body.reference,
+        bookingSnapshot: body.bookingSnapshot
+      });
+
+      if (!booking) {
+        sendJson(response, 404, { error: "Request not found" });
+        return;
+      }
+
+      sendJson(response, 200, { booking: dispatcherViewForBooking(booking) });
+      return;
+    }
+
     if (request.method === "GET" && pathname === "/api/driver/profile") {
       const profile = getDriverProfile();
       sendJson(response, 200, { profile, locations });
@@ -1301,6 +1358,20 @@ async function handleApi(request, response, pathname) {
     if (request.method === "POST" && paymentMatch) {
       const body = await readJsonBody(request);
       const booking = await markBookingPaid(paymentMatch[1], body);
+
+      if (!booking) {
+        sendJson(response, 404, { error: "Booking not found" });
+        return;
+      }
+
+      sendJson(response, 200, { booking });
+      return;
+    }
+
+    const paymentProofMatch = pathname.match(/^\/api\/bookings\/([^/]+)\/payment-proof$/);
+    if (request.method === "POST" && paymentProofMatch) {
+      const body = await readJsonBody(request);
+      const booking = submitPaymentProof(paymentProofMatch[1], body);
 
       if (!booking) {
         sendJson(response, 404, { error: "Booking not found" });

@@ -128,6 +128,7 @@ button {
 .desktop-nav a {
   display: inline-flex;
   align-items: center;
+  gap: 7px;
   min-height: 24px;
   line-height: 1;
 }
